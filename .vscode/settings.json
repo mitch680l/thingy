@@ -1,0 +1,21 @@
+{
+    "files.associations": {
+        "modem_info.h": "c",
+        "array": "c",
+        "chrono": "c",
+        "deque": "c",
+        "forward_list": "c",
+        "initializer_list": "c",
+        "list": "c",
+        "vector": "c",
+        "xhash": "c",
+        "xiosbase": "c",
+        "xstring": "c",
+        "xtree": "c",
+        "xutility": "c",
+        "string": "c",
+        "unordered_map": "c",
+        "string_view": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled"
+}
