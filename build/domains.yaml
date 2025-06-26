@@ -1,0 +1,13 @@
+default: test
+build_dir: C:/nordic/myApps/test/build
+domains:
+  - name: test
+    build_dir: C:/nordic/myApps/test/build/test
+  - name: mcuboot
+    build_dir: C:/nordic/myApps/test/build/mcuboot
+  - name: b0
+    build_dir: C:/nordic/myApps/test/build/b0
+  - name: s1_image
+    build_dir: C:/nordic/myApps/test/build/s1_image
+flash_order:
+  - test

@@ -1,0 +1,13 @@
+# Target labels
+ s1_image
+# Source files and their labels
+C:/nordic/myApps/test/build/modules/nrf/CMakeFiles/s1_image
+C:/nordic/myApps/test/build/modules/nrf/CMakeFiles/s1_image.rule
+C:/nordic/myApps/test/build/modules/nrf/CMakeFiles/s1_image-complete.rule
+C:/nordic/myApps/test/build/modules/nrf/s1_image-prefix/src/s1_image-stamp/s1_image-build.rule
+C:/nordic/myApps/test/build/modules/nrf/s1_image-prefix/src/s1_image-stamp/s1_image-configure.rule
+C:/nordic/myApps/test/build/modules/nrf/s1_image-prefix/src/s1_image-stamp/s1_image-download.rule
+C:/nordic/myApps/test/build/modules/nrf/s1_image-prefix/src/s1_image-stamp/s1_image-install.rule
+C:/nordic/myApps/test/build/modules/nrf/s1_image-prefix/src/s1_image-stamp/s1_image-mkdir.rule
+C:/nordic/myApps/test/build/modules/nrf/s1_image-prefix/src/s1_image-stamp/s1_image-patch.rule
+C:/nordic/myApps/test/build/modules/nrf/s1_image-prefix/src/s1_image-stamp/s1_image-update.rule

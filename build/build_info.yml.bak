@@ -1,0 +1,29 @@
+cmake:
+  board:
+    name: thingy91x
+    path:
+     - C:/ncs/v3.0.2/nrf/boards/nordic/thingy91x
+    qualifiers: nrf9151/ns
+    revision: 
+  images:
+   - name: test
+     source-dir: C:/nordic/myApps/test
+     type: MAIN
+   - name: mcuboot
+     source-dir: C:/ncs/v3.0.2/bootloader/mcuboot/boot/zephyr/
+     type: BOOTLOADER
+   - name: b0
+     source-dir: 
+   - name: s1_image
+     source-dir: 
+  kconfig:
+    files:
+     - C:/nordic/myApps/test/build/_sysbuild/empty.conf
+     - C:/nordic/myApps/test/build/_sysbuild/empty.conf
+    user-files:
+     - C:/nordic/myApps/test/build/_sysbuild/empty.conf
+version: 0.1.0
+west:
+  command: C:\ncs\toolchains\0b393f9e1b\opt\bin\Scripts\west build --build-dir c:/nordic/myApps/test/build c:/nordic/myApps/test --pristine --board thingy91x/nrf9151/ns -- -DCONF_FILE=prj.conf -DBOARD_ROOT=c:/nordic/myapps/test
+  topdir: c:\ncs\v3.0.2
+  version: 1.2.0

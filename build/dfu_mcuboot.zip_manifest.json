@@ -1,0 +1,31 @@
+{
+    "format-version": 1,
+    "time": 1750693720,
+    "files": [
+        {
+            "version_MCUBOOT": "0.0.0+0",
+            "version_B0": "2",
+            "type": "mcuboot",
+            "board": "thingy91x",
+            "soc": "nrf9151",
+            "load_address": 32768,
+            "slot": "0",
+            "size": 48242,
+            "file": "signed_by_mcuboot_and_b0_mcuboot.bin",
+            "modtime": 1750693720
+        },
+        {
+            "version_MCUBOOT": "0.0.0+0",
+            "version_B0": "2",
+            "type": "mcuboot",
+            "board": "thingy91x",
+            "soc": "nrf9151",
+            "load_address": 114688,
+            "slot": "1",
+            "size": 48244,
+            "file": "signed_by_mcuboot_and_b0_s1_image.bin",
+            "modtime": 1750693720
+        }
+    ],
+    "name": "mcuboot"
+}
