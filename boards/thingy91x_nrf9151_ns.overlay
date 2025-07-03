@@ -1,15 +1,8 @@
-&uart1 {
-
-	status = "okay";
-
-	current-speed = < 1000000 >;
-
-	hw-flow-control;
-
-};
-
 &i2c2 {
 	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+    zephyr,concat-buf-size = <64>;
+    zephyr,flash-buf-max-size = <64>;
 };
 
 &bme680 {
@@ -30,32 +23,10 @@
 
 / {
 
-	chosen {
-
-		nordic,modem-trace-uart = &uart1;
-
-	};
-
-};
-
-
-
-
-
-/ {
-
-
 	aliases {
-
-
 		temp-sensor = &bme680;
-        imu = &accelerometer_hp;
-        magnetometer = &magnetometer;
-        acl = &accelerometer_lp;
-
-
-
+		imu = &accelerometer_hp;
+		magnetometer = &magnetometer;
+		acl = &accelerometer_lp;
 	};
-
-
 };

@@ -8,7 +8,7 @@
 #include <nrf_modem_at.h>
 #include <dk_buttons_and_leds.h>
 #include <zephyr/random/random.h>
-
+#include <stdlib.h>
 #include "mqtt_connection.h"
 #include "shell_commands.h"
 
@@ -104,23 +104,32 @@ static void data_print(uint8_t *prefix, uint8_t *data, size_t len)
 
 /* Publish data on the configured topic */
 int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
-	uint8_t *data, size_t len, const char *mqtt_publish_topic)
+    uint8_t *data, size_t len, const char *mqtt_publish_topic)
 {
-	struct mqtt_publish_param param;
-
-	param.message.topic.qos = qos;
-	param.message.topic.topic.utf8 = (uint8_t *)mqtt_publish_topic;
-	param.message.topic.topic.size = strlen(mqtt_publish_topic);
-	param.message.payload.data = data;
-	param.message.payload.len = len;
-	param.message_id = sys_rand32_get();
-	param.dup_flag = 0;
-	param.retain_flag = 0;
-
-	//data_print("Publishing: ", data, len);
-	//LOG_INF("to topic: %s len: %u", mqtt_publish_topic, (unsigned int)strlen(mqtt_publish_topic));
-
-	return mqtt_publish(c, &param);
+    struct mqtt_publish_param param;
+    
+    LOG_DBG("Starting data_publish, payload size: %d", len);
+    int start = k_uptime_get_32();
+    
+    param.message.topic.qos = qos;
+    param.message.topic.topic.utf8 = (uint8_t *)mqtt_publish_topic;
+    param.message.topic.topic.size = strlen(mqtt_publish_topic);
+    param.message.payload.data = data;
+    param.message.payload.len = len;
+    param.message_id = sys_rand32_get();
+    param.dup_flag = 0;
+    param.retain_flag = 0;
+    
+    int setup_time = k_uptime_get_32() - start;
+    LOG_DBG("Parameter setup took: %d ms", setup_time);
+    
+    int publish_start = k_uptime_get_32();
+    int result = mqtt_publish(c, &param);
+    int publish_time = k_uptime_get_32() - publish_start;
+    
+    LOG_DBG("mqtt_publish() took: %d ms, result: %d", publish_time, result);
+    
+    return result;
 }
 
 /* MQTT client event handler */

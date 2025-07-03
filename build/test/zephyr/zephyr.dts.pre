@@ -1187,26 +1187,13 @@ timer2: timer@11000 {
   zephyr,wifi = &nordic_wlan0;
  };
 };
-
-
-
-&uart1 {
- status = "disabled";
-};
 # 0 "<command-line>" 2
 # 1 "C:/nordic/myApps/test/boards/thingy91x_nrf9151_ns.overlay" 1
-&uart1 {
-
- status = "okay";
-
- current-speed = < 1000000 >;
-
- hw-flow-control;
-
-};
-
 &i2c2 {
  status = "okay";
+ clock-frequency = <400000>;
+    zephyr,concat-buf-size = <64>;
+    zephyr,flash-buf-max-size = <64>;
 };
 
 &bme680 {
@@ -1227,34 +1214,12 @@ timer2: timer@11000 {
 
 / {
 
- chosen {
-
-  nordic,modem-trace-uart = &uart1;
-
- };
-
-};
-
-
-
-
-
-/ {
-
-
  aliases {
-
-
   temp-sensor = &bme680;
-        imu = &accelerometer_hp;
-        magnetometer = &magnetometer;
-        acl = &accelerometer_lp;
-
-
-
+  imu = &accelerometer_hp;
+  magnetometer = &magnetometer;
+  acl = &accelerometer_lp;
  };
-
-
 };
 # 0 "<command-line>" 2
 # 1 "C:/ncs/v3.0.2/zephyr/misc/empty_file.c"

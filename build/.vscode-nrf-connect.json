@@ -7,7 +7,9 @@
     "c:\\ncs\\v3.0.2\\nrf\\boards\\nordic\\thingy91x"
   ],
   "optimizations": "none",
-  "cmakeArgs": [],
+  "cmakeArgs": [
+    "-DBOARD_ROOT=\"c:\\nordic\\myapps\\test\""
+  ],
   "confFiles": [
     "prj.conf"
   ],
