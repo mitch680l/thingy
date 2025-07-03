@@ -28,16 +28,17 @@
 #include <zephyr/net/mqtt.h>
 #include <modem/modem_info.h>
 #include "mqtt_connection.h"
+#include "gnss.h"
 #include "heartbeat.h"
 #include "shell_commands.h"
+#include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/sensor.h>
-
+#define MQTT_THREAD_STACK_SIZE 2048
+#define MQTT_THREAD_PRIORITY 1
 #define JSON_BUF_SIZE 516
-#define SLEEP_CHUNK_MS 500
 #define BAD_PUBLISH_LIMIT 5
 #define FORMAT_STRING "Current uptime is: %d"
 /* JSON globals */
-static char json_payload[JSON_BUF_SIZE] = "NO PVT";
 static char json_payload2[JSON_BUF_SIZE] = "NO LTE";
 static char json_payload3[JSON_BUF_SIZE] = "NO SENSOR DATA";
 /* MQTT structures */
@@ -46,49 +47,85 @@ static struct pollfd fds;
 static int bad_publish = 0;
 /*LTE globals*/
 static bool update_lte_info = false;
-/* GNSS globals*/
-static bool first_fix = true;
-static struct nrf_modem_gnss_pvt_data_frame current_pvt;
+static bool publish_lte_info = false;
+
 /* Semaphores */
 K_SEM_DEFINE(lte_connected, 0, 1);
-K_SEM_DEFINE(gnss_fix_sem, 0, 1);
+K_MUTEX_DEFINE(json_mutex);
 /* Logger */
+/*MCC+MNC*/
+typedef struct {
+    const char *mccmnc;
+    const char *name;
+} OperatorEntry;
+
+static const OperatorEntry operator_table[] = {
+    {"302720", "Canada - Rogers"},
+    {"302610", "Canada - Bell"},
+    {"302220", "Canada - Telus"},
+    {"310260", "United States - T-Mobile"},
+    {"310410", "United States - AT&T"},
+    {"311480", "United States - Verizon"},
+    {"312530", "United States - Dish"},
+    {"313100", "United States - FirstNet"},
+    {"334020", "Mexico - Telcel"},
+    {"334030", "Mexico - AT&T Mexico"},
+    {"334050", "Mexico - Movistar"},
+};
+
 LOG_MODULE_REGISTER(loop, LOG_LEVEL_INF);
 /*Sensors*/
 const struct device *sensor_dev = DEVICE_DT_GET(DT_ALIAS(temp_sensor));
 const struct device *accel      = DEVICE_DT_GET(DT_ALIAS(acl));
 const struct device *mag        = DEVICE_DT_GET(DT_ALIAS(magnetometer));
 const struct device *imu        = DEVICE_DT_GET(DT_ALIAS(imu));
-
 static void pack_sensor_data(void)
 {
-	static struct sensor_value temp, press, humid, gas;
-	static struct sensor_value accel_val[3], mag_val[3];
-	static struct sensor_value imu_acc[3], imu_gyro[3];
+	static struct sensor_value temp     = {0}, press = {0}, humid = {0}, gas = {0};
+	static struct sensor_value accel_val[3] = {{0}}, mag_val[3] = {{0}};
+	static struct sensor_value imu_acc[3]   = {{0}}, imu_gyro[3] = {{0}};
 
-	bool ok = true;
+#define TRY_FETCH(dev) ((dev) && sensor_sample_fetch(dev) >= 0)
+#define TRY_GET(dev, chan, val) ((dev) && sensor_channel_get(dev, chan, val) >= 0)
 
-	// Fetch samples
-	ok &= sensor_sample_fetch(sensor_dev) >= 0;
-	ok &= sensor_sample_fetch(accel) >= 0;
-	ok &= sensor_sample_fetch(mag) >= 0;
-	ok &= sensor_sample_fetch(imu) >= 0;
-
-	// Read values
-	ok &= sensor_channel_get(sensor_dev, SENSOR_CHAN_AMBIENT_TEMP, &temp) >= 0;
-	ok &= sensor_channel_get(sensor_dev, SENSOR_CHAN_PRESS, &press) >= 0;
-	ok &= sensor_channel_get(sensor_dev, SENSOR_CHAN_HUMIDITY, &humid) >= 0;
-	ok &= sensor_channel_get(sensor_dev, SENSOR_CHAN_GAS_RES, &gas) >= 0;
-
-	ok &= sensor_channel_get(accel, SENSOR_CHAN_ACCEL_XYZ, accel_val) >= 0;
-	ok &= sensor_channel_get(mag, SENSOR_CHAN_MAGN_XYZ, mag_val) >= 0;
-	ok &= sensor_channel_get(imu, SENSOR_CHAN_ACCEL_XYZ, imu_acc) >= 0;
-	ok &= sensor_channel_get(imu, SENSOR_CHAN_GYRO_XYZ, imu_gyro) >= 0;
-
-	if (!ok) {
-		LOG_ERR("Sensor read failed");
+	if (!TRY_FETCH(sensor_dev)) {
+		LOG_WRN("Ambient sensor fetch failed");
+	}
+	if (!TRY_FETCH(accel)) {
+		LOG_WRN("Accelerometer fetch failed");
+	}
+	if (!TRY_FETCH(mag)) {
+		LOG_WRN("Magnetometer fetch failed");
+	}
+	if (!TRY_FETCH(imu)) {
+		LOG_WRN("IMU fetch failed");
 	}
 
+	if (!TRY_GET(sensor_dev, SENSOR_CHAN_AMBIENT_TEMP, &temp)) {
+		temp.val1 = 0; temp.val2 = 0;
+	}
+	if (!TRY_GET(sensor_dev, SENSOR_CHAN_PRESS, &press)) {
+		press.val1 = 0; press.val2 = 0;
+	}
+	if (!TRY_GET(sensor_dev, SENSOR_CHAN_HUMIDITY, &humid)) {
+		humid.val1 = 0; humid.val2 = 0;
+	}
+	if (!TRY_GET(sensor_dev, SENSOR_CHAN_GAS_RES, &gas)) {
+		gas.val1 = 0; gas.val2 = 0;
+	}
+
+	if (!TRY_GET(accel, SENSOR_CHAN_ACCEL_XYZ, accel_val)) {
+		memset(accel_val, 0, sizeof(accel_val));
+	}
+	if (!TRY_GET(mag, SENSOR_CHAN_MAGN_XYZ, mag_val)) {
+		memset(mag_val, 0, sizeof(mag_val));
+	}
+	if (!TRY_GET(imu, SENSOR_CHAN_ACCEL_XYZ, imu_acc)) {
+		memset(imu_acc, 0, sizeof(imu_acc));
+	}
+	if (!TRY_GET(imu, SENSOR_CHAN_GYRO_XYZ, imu_gyro)) {
+		memset(imu_gyro, 0, sizeof(imu_gyro));
+	}
 
 	snprintk(json_payload3, sizeof(json_payload3),
 		"{"
@@ -119,6 +156,8 @@ static void pack_sensor_data(void)
 		imu_gyro[1].val1, abs(imu_gyro[1].val2),
 		imu_gyro[2].val1, abs(imu_gyro[2].val2)
 	);
+
+	LOG_DBG("Sensor data packed");
 }
 
 static void init_sensors(void) {
@@ -183,96 +222,54 @@ static void init_sensors(void) {
   
 }
 
+
+
+const char *lookup_operator_name(const char *mccmnc)
+{
+    if (mccmnc == NULL || strlen(mccmnc) < 5)
+        return "Invalid Operator Code";
+
+    for (int i = 0; i < sizeof(operator_table) / sizeof(operator_table[0]); i++) {
+        if (strcmp(operator_table[i].mccmnc, mccmnc) == 0) {
+            return operator_table[i].name;
+        }
+    }
+    return "Uknown Operator";
+}
+
 static void pack_lte_data(void)
 {
     enum modem_info;
     LOG_INF("Preparing to print LTE data");
     int ret;
     char lte_rsp[20] = "uknown";
-    char lte_current_band[20] = "uknown";
-    char lte_sup_band[20] = "uknown";
     char lte_area[20] = "uknown";
-    char lte_ue_mode[20] = "uknown";
     char lte_operator[20] = "uknown";
-    char lte_mcc[20] = "uknown";
-    char lte_mnc[20] = "uknown";
     char lte_cell_id[20] = "uknown";
-    char modem_ip_address[20] = "uknown";
-    char battery_voltage[20] = "uknown";
-    char temp[20] = "uknown";
-    char lte_mode[20] = "uknown";
-    char lte_gps_mode[20] = "uknown";
-    char time[30] = "uknown";
-
+    const char *lte_operator_decoded;
     ret = modem_info_init();
     if (ret < 0) {
         LOG_ERR("Failed to initialize modem info: %d", ret);
         return;  // Return early if modem_info_init fails
     }
-
     ret = modem_info_string_get(MODEM_INFO_RSRP, lte_rsp, sizeof(lte_rsp));
     if (ret < 0) {
         LOG_ERR("Failed to get LTE RSRP: %d", ret);
-    }
-    ret = modem_info_string_get(MODEM_INFO_CUR_BAND, lte_current_band, sizeof(lte_current_band));
-    if (ret < 0) {
-        LOG_ERR("Failed to get current LTE band: %d", ret);
-    }
-    ret = modem_info_string_get(MODEM_INFO_SUP_BAND, lte_sup_band, sizeof(lte_sup_band));
-    if (ret < 0) {
-        //LOG_ERR("Failed to get supported LTE bands: %d", ret);
-        //Known issue
     }
     ret = modem_info_string_get(MODEM_INFO_AREA_CODE, lte_area, sizeof(lte_area));
     if (ret < 0) {
         LOG_ERR("Failed to get tracking area code: %d", ret);
     }
-    ret = modem_info_string_get(MODEM_INFO_UE_MODE, lte_ue_mode, sizeof(lte_ue_mode));
-    if (ret < 0) {
-        LOG_ERR("Failed to get UE mode: %d", ret);
-    }
     ret = modem_info_string_get(MODEM_INFO_OPERATOR, lte_operator, sizeof(lte_operator));
     if (ret < 0) {
-        LOG_ERR("Failed to get operator name: %d", ret);
+        LOG_ERR("FAILED TO GET OPERATOR.");
     }
-    ret = modem_info_string_get(MODEM_INFO_MCC, lte_mcc, sizeof(lte_mcc));
-    if (ret < 0) {
-        //LOG_ERR("Failed to get mobile country code: %d", ret);
-        // Known issue
-    }
-    ret = modem_info_string_get(MODEM_INFO_MNC, lte_mnc, sizeof(lte_mnc));
-    if (ret < 0) {
-        //LOG_ERR("Failed to get mobile network code: %d", ret);
-        // Known issue
-    }
+    lte_operator_decoded = lookup_operator_name(lte_operator);
     ret = modem_info_string_get(MODEM_INFO_CELLID, lte_cell_id, sizeof(lte_cell_id));
     if (ret < 0) {
         LOG_ERR("Failed to get cell ID: %d", ret);
     }
-    ret = modem_info_string_get(MODEM_INFO_IP_ADDRESS, modem_ip_address, sizeof(modem_ip_address));
-    if (ret < 0) {
-        LOG_ERR("Failed to get IP address: %d", ret);
-    }
-    ret = modem_info_string_get(MODEM_INFO_BATTERY, battery_voltage, sizeof(battery_voltage));
-    if (ret < 0) {
-        LOG_ERR("Failed to get battery voltage: %d", ret);
-    }
-    ret = modem_info_string_get(MODEM_INFO_TEMP, temp, sizeof(temp));
-    if (ret < 0) {
-        LOG_ERR("Failed to get temperature: %d", ret);
-    }
-    ret = modem_info_string_get(MODEM_INFO_LTE_MODE, lte_mode, sizeof(lte_mode));
-    if (ret < 0) {
-        LOG_ERR("Failed to get LTE mode: %d", ret);
-    }
-    ret = modem_info_string_get(MODEM_INFO_GPS_MODE, lte_gps_mode, sizeof(lte_gps_mode));
-    if (ret < 0) {
-        LOG_ERR("Failed to get GPS mode: %d", ret);
-    }
-    ret = modem_info_string_get(MODEM_INFO_DATE_TIME, time, sizeof(time));
-    if (ret < 0) {
-        LOG_ERR("Failed to get date and time: %d", ret);
-    }
+    
    
 
 
@@ -288,32 +285,14 @@ static void pack_lte_data(void)
     int len = snprintf(json_payload2, sizeof(json_payload2),
         "{"
           "\"RSRP\":\"%s\","
-          "\"CurrentBand\":\"%s\","
-          "\"SupportedBands\":\"%s\","
           "\"AreaCode\":\"%s\","
-          "\"UE_Mode\":\"%s\","
           "\"Operator\":\"%s\","
-          "\"MCC\":\"%s\","
-          "\"MNC\":\"%s\","
           "\"CellID\":\"%s\","
-          "\"IP_Address\":\"%s\","
-          "\"Battery_Voltage\":\"%s\","
-          "\"Temperature\":\"%s\","
-          "\"Time\":\"%s\""
         "}",
         lte_rsp,
-        lte_current_band,
-        lte_sup_band,
         lte_area,
-        lte_ue_mode,
-        lte_operator,
-        lte_mcc,
-        lte_mnc,
-        lte_cell_id,
-        modem_ip_address,
-        battery_voltage,
-        temp,
-        time
+        lte_operator_decoded,
+        lte_cell_id
     );
     
     if (len < 0) {
@@ -326,6 +305,8 @@ static void pack_lte_data(void)
     //LOG_INF("LTE Data: %s", json_payload2);
 }
 
+
+
 static void lte_handler(const struct lte_lc_evt *const evt) {
     switch (evt->type) {
         case LTE_LC_EVT_NW_REG_STATUS:
@@ -336,7 +317,6 @@ static void lte_handler(const struct lte_lc_evt *const evt) {
                     evt->nw_reg_status == LTE_LC_NW_REG_REGISTERED_HOME ?
                     "Connected - home network" :
                     "Connected - roaming");
-                update_lte_info = true;
                 k_sem_give(&lte_connected);
             }
             break;
@@ -344,7 +324,6 @@ static void lte_handler(const struct lte_lc_evt *const evt) {
             LOG_INF("RRC mode: %s",
                 evt->rrc_mode == LTE_LC_RRC_MODE_CONNECTED ?
                 "Connected" : "Idle");
-            update_lte_info = true;
             break;
 
         case LTE_LC_EVT_CELL_UPDATE:
@@ -384,18 +363,14 @@ static int modem_configure(void)
 		LOG_ERR("Failed to initialize the modem library, error: %d", err);
 		return err;
 	}
-    /*
-    struct lte_lc_psm_cfg psm_cfg = {
-    .tau = -1,           
-    .active_time = 1       
-    };
-    lte_lc_psm_param_set_seconds(psm_cfg.tau,psm_cfg.active_time); // Set PSM parameters to 1,1
-    lte_lc_psm_req(true);
-    */
-    lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_LTEM_GPS, 
-                           LTE_LC_SYSTEM_MODE_PREFER_AUTO);
 
     
+    lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_LTEM, 
+                           LTE_LC_SYSTEM_MODE_PREFER_AUTO);
+
+    lte_lc_psm_req(false);
+    //lte_lc_edrx_req(false);
+    lte_lc_func_mode_set(LTE_LC_FUNC_MODE_NORMAL);
 	LOG_INF("Connecting to LTE network");
 	err = lte_lc_connect_async(lte_handler);
 	if (err) {
@@ -409,260 +384,116 @@ static int modem_configure(void)
 	return 0;
 }
 
-static void gnss_event_handler(int event)
-{
-    int err;
-    
-    switch (event) {
-    case NRF_MODEM_GNSS_EVT_PVT: {
-        /* Read the latest PVT frame */
-        err = nrf_modem_gnss_read(&current_pvt,
-                                  sizeof(current_pvt),
-                                  NRF_MODEM_GNSS_DATA_PVT);
-        if (err) {
-            LOG_ERR("GNSS read failed: %d", err);
-            break;
-        }
-
-        /* Show how many satellites are in view while acquiring first fix*/
-        if(first_fix){
-            int sat_count = 0;
-            for (int i = 0; i < ARRAY_SIZE(current_pvt.sv); i++) {
-                if (current_pvt.sv[i].signal) {
-                    sat_count++;
-                }
-            }
-            LOG_INF(" Satellites in view: %d", sat_count);
-        }
-        break;
-    }
-	case NRF_MODEM_GNSS_EVT_FIX: 
-        /* Handle first fix event */
-        if(first_fix){
-		    LOG_INF("GNSS fix event");   
-            first_fix = false;
-        }       
-		/* Grab the new PVT data */
-		err = nrf_modem_gnss_read(&current_pvt, sizeof(current_pvt), NRF_MODEM_GNSS_DATA_PVT);
-		if (err) {
-			LOG_ERR("Failed to read PVT on FIX: %d", err);
-			break;
-		}
-		
-		#if CONFIG_TRACKER_PERIODIC_INTERVAL <= 1
-			/* In single-shot (0) or continuous (1) mode, wake the main loop here */
-			k_sem_give(&gnss_fix_sem);
-		#endif
-
-		break;
-
-
-    case NRF_MODEM_GNSS_EVT_SLEEP_AFTER_FIX:
-        LOG_INF("GNSS sleep after fix");
-        k_sem_give(&gnss_fix_sem);
-        break;
-
-    case NRF_MODEM_GNSS_EVT_PERIODIC_WAKEUP:
-        LOG_INF("GNSS periodic wakeup");
-        break;
-
-    case NRF_MODEM_GNSS_EVT_BLOCKED:
-        LOG_ERR("GNSS is blocked by LTE event");
-        break;
-
-    case NRF_MODEM_GNSS_EVT_SLEEP_AFTER_TIMEOUT:
-        LOG_INF("GNSS sleep after timeout");
-        break;
-
-    default:
-        break;
-    }
-}
-
-static int gnss_init_and_start(void)
-{
-    int err;
-    #if defined(CONFIG_GNSS_HIGH_ACCURACY_TIMING_SOURCE)
-        if (nrf_modem_gnss_timing_source_set(NRF_MODEM_GNSS_TIMING_SOURCE_TCXO)){
-            LOG_ERR("Failed to set TCXO timing source");
-            return -1;
-        }
-    #endif
-    #if defined(CONFIG_GNSS_LOW_ACCURACY) || defined (CONFIG_BOARD_THINGY91_NRF9160_NS)
-        uint8_t use_case;
-        use_case = NRF_MODEM_GNSS_USE_CASE_MULTIPLE_HOT_START | NRF_MODEM_GNSS_USE_CASE_LOW_ACCURACY;
-        if (nrf_modem_gnss_use_case_set(use_case) != 0) {
-            LOG_ERR("Failed to set low accuracy use case");
-            return -1;
-        }
-    #else 
-        /* Use Case: continuous tracking, no scheduled downloads */
-        uint32_t uc = NRF_MODEM_GNSS_USE_CASE_MULTIPLE_HOT_START
-                    | NRF_MODEM_GNSS_USE_CASE_SCHED_DOWNLOAD_DISABLE;
-
-        err = nrf_modem_gnss_use_case_set(uc);
-        if (err) {
-            LOG_WRN("GNSS use_case_set: %d", err);
-        }
-
-    #endif
-        /* Configure GNSS event handler . */
-        if (nrf_modem_gnss_event_handler_set(gnss_event_handler) != 0) {
-            LOG_ERR("Failed to set GNSS event handler");
-            return -1;
-        }
-
-        if (nrf_modem_gnss_fix_interval_set(CONFIG_TRACKER_PERIODIC_INTERVAL) != 0) {
-            LOG_ERR("Failed to set GNSS fix interval");
-            return -1;
-        }
-
-        if (nrf_modem_gnss_fix_retry_set(CONFIG_TRACKER_PERIODIC_TIMEOUT) != 0) {
-            LOG_ERR("Failed to set GNSS fix retry");
-            return -1;
-        }
-
-        if (nrf_modem_gnss_start() != 0) {
-            LOG_ERR("Failed to start GNSS");
-            return -1;
-        }
-        if (nrf_modem_gnss_prio_mode_enable() != 0){
-            LOG_ERR("Error setting GNSS priority mode");
-            return -1;
-        }
-        return 0;
-    }
-
-static void pack_fix_data(struct nrf_modem_gnss_pvt_data_frame *pvt_data)
-{
-    /* Build the JSON string from GNSS PVT data */
-    int len = snprintf(json_payload, sizeof(json_payload),
-        "{"
-          "\"GNSS\":{"
-            "\"device_id\":\"%s\","
-            "\"timestamp\":\"%04u-%02u-%02uT%02u:%02u:%02u.%03uZ\","
-            "\"lat\":%.6f,"
-            "\"lon\":%.6f,"
-            "\"alt\":%.1f,"
-            "\"speed\":%.2f,"
-            "\"heading\":%.1f,"
-            "\"vert_speed\":%.2f"
-          "}"
-        "}",
-        mqtt_client_id,
-        pvt_data->datetime.year,
-        pvt_data->datetime.month,
-        pvt_data->datetime.day,
-        pvt_data->datetime.hour,
-        pvt_data->datetime.minute,
-        pvt_data->datetime.seconds,
-        pvt_data->datetime.ms,
-        pvt_data->latitude,
-        pvt_data->longitude,
-        (double)pvt_data->altitude,
-        (double)pvt_data->speed,
-        (double)pvt_data->heading,
-        (double)pvt_data->vertical_speed
-    );
-
-    if (len < 0) {
-        LOG_ERR("Failed to format JSON: %d", len);
-        return;
-    } else if ((size_t)len >= sizeof(json_payload)) {
-        LOG_WRN("JSON truncated (%d bytes needed)", len);
-    }
-
-    /* Print the JSON payload */
-	//LOG_INF("%s", json_payload);
-}
 
 int publish_all() {
-	int err;
+    int err = 0;
     static char topic[200];
-   
-    snprintf(topic, sizeof(topic), "%s%s",mqtt_client_id,"/gnss_json");
-	err = data_publish(&client, MQTT_QOS_0_AT_MOST_ONCE,
-		(uint8_t *)json_payload, strlen(json_payload),
-		topic);
+    static char last_payload[sizeof(json_payload)] = {0};  // Tracks last GNSS payload
 
-    snprintf(topic, sizeof(topic), "%s%s",mqtt_client_id,"/sensor_json");
-    err = data_publish(&client, MQTT_QOS_0_AT_MOST_ONCE,
-        (uint8_t *)json_payload3, strlen(json_payload3),
-        topic);
-    /*
-    snprintf(topic, sizeof(topic), "%s%s", mqtt_client_id, "/lte_json");
-    err = data_publish(&client, MQTT_QOS_0_AT_MOST_ONCE,
-        (uint8_t *)json_payload2, strlen(json_payload2),
-        topic);
+    k_mutex_lock(&json_mutex, K_FOREVER);
 
-    */
-   
+    // Check if GNSS payload is new
+    if (strcmp(json_payload, last_payload) == 0) {
+        LOG_WRN("No new GNSS fix since last publish!");
+    } 
+    else {
+        snprintf(topic, sizeof(topic), "%s%s", mqtt_client_id, "/gnss_json");
+        err = data_publish(&client, MQTT_QOS_0_AT_MOST_ONCE,
+                           (uint8_t *)json_payload, strlen(json_payload), topic);
+        // Update last known payload
+        memcpy(last_payload, json_payload, sizeof(json_payload));
+    }
+
+    if (publish_lte_info) {
+        snprintf(topic, sizeof(topic), "%s%s", mqtt_client_id, "/lte_json");
+        err = data_publish(&client, MQTT_QOS_0_AT_MOST_ONCE,
+                           (uint8_t *)json_payload2, strlen(json_payload2), topic);
+        publish_lte_info = false;
+    }
+
+    k_mutex_unlock(&json_mutex);
+
     return err;
 }
 
-static void button_handler(uint32_t button_state, uint32_t has_changed)
-{
-	switch (has_changed) {
-	case DK_BTN1_MSK:
-		if (button_state & DK_BTN1_MSK){
-			int err = publish_all();
-			if (err) {
-				LOG_ERR("Failed to publish message, %d", err);
-				return;
-			}
-		}
-		break;
-	}
-
+static void mqtt_handle() {
+    int err;
+    int start_time = k_uptime_get_32();
+    
+    // Time the poll operation
+    int poll_start = k_uptime_get_32();
+    int ret = poll(&fds, 1, 0);
+    int poll_time = k_uptime_get_32() - poll_start;
+    LOG_DBG("poll() took: %d ms", poll_time);
+    
+    if (ret < 0) {
+        LOG_ERR("poll() error: %d", errno);
+    } else if ((ret > 0) && (fds.revents & POLLIN)) {
+        int input_start = k_uptime_get_32();
+        mqtt_input(&client);
+        int input_time = k_uptime_get_32() - input_start;
+        LOG_DBG("mqtt_input took: %d ms", input_time);
+    }
+    
+    LOG_DBG("MQTT Publish");
+    
+    // Time the publish operation
+    int publish_start = k_uptime_get_32();
+    err = publish_all();
+    int publish_time = k_uptime_get_32() - publish_start;
+    LOG_DBG("publish_all() took: %d ms", publish_time);
+    
+    // Time the error handling and heartbeat
+    int error_handling_start = k_uptime_get_32();
+    if (err) {
+        LOG_ERR("data_publish: %d", err);
+        bad_publish++;
+        if(bad_publish >= BAD_PUBLISH_LIMIT)
+            sys_reboot(SYS_REBOOT_COLD);
+    } else {
+        bad_publish = 0;
+    }
+    int error_handling_time = k_uptime_get_32() - error_handling_start;
+    LOG_DBG("Error handling and heartbeat took: %d ms", error_handling_time);
+    
+    // Total function time
+    int total_time = k_uptime_get_32() - start_time;
+    LOG_DBG("Total mqtt_handle() took: %d ms", total_time);
 }
 
-//Get new GNSS fix imediately pack data into internal buffer (JSON format)
-static void new_fix() {
-    int ret;
-    while (k_sem_take(&gnss_fix_sem, K_NO_WAIT) == 0) { /* nothing */ }
-    heartbeat_config(HB_COLOR_YELLOW, 1, 500);
-    ret = k_sem_take(&gnss_fix_sem, K_FOREVER);
-    pack_fix_data(&current_pvt);
-}
+K_THREAD_STACK_DEFINE(mqtt_thread_stack, MQTT_THREAD_STACK_SIZE);
+static struct k_thread mqtt_thread_data;
 
+void mqtt_thread_fn(void *arg1, void *arg2, void *arg3) {
+    while (1) {
+        int start = k_uptime_get();
+        mqtt_handle();  // this will publish and manage the connection
+        k_msleep(39);
+        int end = k_uptime_get();
+        LOG_INF("MQTT Thread Took: %d", end - start);
+    }
+}
 //Initialize dependencies
 static int init() {
     int err;
-    
-    /* Delay on bootup so PC USB has time to connect to the serial port*/
+    k_thread_priority_set(k_current_get(), 13);
 	k_sleep(K_SECONDS(1));
-
-    /* Shell Commands - Initialize first to retrieve device settings from non-volatile memory*/
     shell_mqtt_init();
     LOG_INF("Shell Initialized");
-    
-	/* Display banner and device settings */
 	LOG_INF("Tracker Demo Version %d.%d.%d started\n",CONFIG_TRACKER_VERSION_MAJOR,CONFIG_TRACKER_VERSION_MINOR,CONFIG_TRACKER_VERSION_PATCH);
 	LOG_INF("Device ID: %s", mqtt_client_id);
     LOG_INF("MQTT Broker Host: %s", mqtt_broker_host);
     LOG_INF("MQTT Broker Port: %d", mqtt_broker_port);
     LOG_INF("MQTT Publish Interval (sec): %d", mqtt_publish_interval);
-    //LOG_INF("MQTT Subscribe Topic: %s", mqtt_subscribe_topic);
     LOG_INF("MQTT Connection Keep Alive (sec): %d", mqtt_keepalive);
-    
-	LOG_INF("GNSS Periodic Interval: %d", CONFIG_TRACKER_PERIODIC_INTERVAL);
-	LOG_INF("GNSS Periodic Timeout: %d", CONFIG_TRACKER_PERIODIC_TIMEOUT);
-
-	/* Initializations */
-    init_sensors();
-    /* LEDs and Button */
+    //init_sensors();
+    gnss_int();
 	err = dk_leds_init();
 	if (err){
 		LOG_ERR("Failed to initialize the LEDs Library");
         return err;
 	}
     heartbeat_config(HB_COLOR_RED, 1, 500);
-	err = dk_buttons_init(button_handler);
-	if (err) {
-		LOG_ERR("Failed to initialize button handler: %d", err);
-		return err;
-	}
-	/* Modem */
     LOG_INF("Initializing modem");
 	err = modem_configure();
     if (err) {
@@ -670,49 +501,6 @@ static int init() {
         return err;
     }
     LOG_INF("Modem initialized");
-    pack_lte_data();
-    
-	/* Decativate LTE until GNSS fix is achieved */
-	LOG_INF("Deactivating LTE radio for GNSS fix");
-	err = lte_lc_func_mode_set(LTE_LC_FUNC_MODE_DEACTIVATE_LTE);
-	if (err) {
-		LOG_ERR("Failed to decativate LTE and enable GNSS functional mode");
-		return err;
-	}
-
-    /* GNSS - get first fix */
-    LOG_INF("Starting GNSS");
-	gnss_init_and_start();
-	/* Wait for first GNSS fix*/
-    LOG_INF("Waiting for first GNSS fix");
-    /* Indicate Yellow for new fix */
-    heartbeat_config(HB_COLOR_YELLOW, 1, 500);
-	k_sem_take(&gnss_fix_sem, K_FOREVER);
-    LOG_INF("GNSS Fix acheived");
-
-
-    /* Bring up LTE connection */
-    /* Indicate Blue fast blink for LTE connection operation*/
-    heartbeat_config(HB_COLOR_BLUE, 2, 250);
-    /* Activate LTE */
-    LOG_INF("Activating LTE radio");
-    err = lte_lc_func_mode_set(LTE_LC_FUNC_MODE_ACTIVATE_LTE);
-    if (err) {
-        LOG_ERR("ACTIVATE_LTE failed: %d", err);
-        return err;
-    }
-    /* Attach to LTE network */
-    LOG_INF("Attaching LTE (async)");
-    err = lte_lc_connect_async(lte_handler);
-    if (err) {
-        LOG_ERR("connect_async failed: %d", err);
-        return err;
-    }
-    k_sem_take(&lte_connected, K_FOREVER);
-
-
-    /* Connect to MQTT server */
-    /* One-time MQTT setup */
     LOG_INF("Connecting to MQTT broker");
     err = client_init(&client);
     if (err) {
@@ -724,6 +512,13 @@ static int init() {
         LOG_ERR("mqtt_connect: %d", err);
         return err;
     }
+
+    k_sleep(K_SECONDS(1));
+
+    k_thread_create(&mqtt_thread_data, mqtt_thread_stack,
+                K_THREAD_STACK_SIZEOF(mqtt_thread_stack),
+                mqtt_thread_fn, NULL, NULL, NULL,
+                MQTT_THREAD_PRIORITY, 0, K_NO_WAIT);
     err = fds_init(&client, &fds);
     if (err) {
         LOG_ERR("fds_init: %d", err);
@@ -733,73 +528,39 @@ static int init() {
     return 0;
 }
 
-// Handle MQTT connection and publish data
-static void mqtt_handle() {
-    int err;
-/* Publish the JSON to the MQTT broker*/
-    //LOG_INF("MQTT Poll and Ping");
-    /* Do a quick, non-blocking poll to handle any incoming packets */
-    int ret = poll(&fds, 1, 0);
-    if (ret < 0) {
-        LOG_ERR("poll() error: %d", errno);
-    } else if ((ret > 0) && (fds.revents & POLLIN)) {
-        mqtt_input(&client);
-    }
-    /* Send keep-alive ping*/
-    //mqtt_live(&client);
 
-    /* Publish the JSON */
-    //LOG_INF("MQTT Publish");
-    
 
-    err = publish_all();
-    
-    if (err) {
-        LOG_ERR("data_publish: %d", err);
-        /* Indicate Red fast blink for bad publish */
-        heartbeat_config(HB_COLOR_RED, 2, 250);
-        bad_publish++;
-        if(bad_publish >= BAD_PUBLISH_LIMIT)
-            sys_reboot(SYS_REBOOT_COLD);
-        
-    } else {
-        /* Indicate Green for valid publish */
-        
-        heartbeat_config(HB_COLOR_GREEN, 2, 250);
-        bad_publish = 0;
-        
-    }
-}
+
+
 
 int main(void) {
 	int err;
     err = init();
     if (err) {
         LOG_ERR("Initialization failed: %d", err);
-        sys_reboot(SYS_REBOOT_COLD);
     }
-
+    else {
+        LOG_INF("INIT GOOD");
+    }
     while (1) {
-        int err;
-        int start = k_uptime_get_32();
-        //err = nrf_modem_gnss_prio_mode_enable();
-       
-        new_fix(); //blocking
-
-        //err = nrf_modem_gnss_prio_mode_disable();
-        int fixtime = k_uptime_get_32() - start;
-        LOG_INF("New GNSS fix took: %d ms", fixtime);
-        pack_sensor_data();
-        if (update_lte_info) {
-            //pack_lte_data();
-            update_lte_info = false;
-        }
-
-        mqtt_handle();
-
+        int start = k_uptime_get();
+        gnss_main_loop();
         
-        int end = k_uptime_get_32() - start;
-        LOG_INF("Full Loop Took: %d ms", end);
+        if (update_lte_info) {
+           k_mutex_lock(&json_mutex, K_FOREVER);
+           pack_lte_data();
+           k_mutex_unlock(&json_mutex);
+           update_lte_info = false;
+           publish_lte_info = true;
+        }
+        k_msleep(15);
+        int end = k_uptime_get();
+        LOG_INF("Main Loop Took: %d", end-start);
+
     }
     return 0;
 }
+
+
+
+

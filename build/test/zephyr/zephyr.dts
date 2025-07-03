@@ -16,7 +16,6 @@
 		zephyr,sram = &sram0_ns_app;
 		zephyr,code-partition = &slot0_ns_partition;
 		zephyr,wifi = &nordic_wlan0;
-		nordic,modem-trace-uart = &uart1;
 	};
 	aliases {
 		sw0 = &button0;
@@ -220,7 +219,6 @@
 				pinctrl-0 = < &uart1_default >;
 				pinctrl-1 = < &uart1_sleep >;
 				pinctrl-names = "default", "sleep";
-				hw-flow-control;
 			};
 			uart2: uart@a000 {
 				compatible = "nordic,nrf-uarte";
@@ -263,10 +261,12 @@
 				easydma-maxcnt-bits = < 0xd >;
 				status = "okay";
 				zephyr,pm-device-runtime-auto;
-				clock-frequency = < 0x186a0 >;
+				clock-frequency = < 0x61a80 >;
 				pinctrl-0 = < &i2c2_default >;
 				pinctrl-1 = < &i2c2_sleep >;
 				pinctrl-names = "default", "sleep";
+				zephyr,concat-buf-size = < 0x40 >;
+				zephyr,flash-buf-max-size = < 0x40 >;
 				bme680: bme680@76 {
 					status = "okay";
 					compatible = "bosch,bme680";

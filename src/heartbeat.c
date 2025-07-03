@@ -4,7 +4,7 @@
 #include <dk_buttons_and_leds.h>
 
 #define HB_STACK_SIZE   512
-#define HB_PRIORITY     7
+#define HB_PRIORITY     10
 
 static struct k_thread  hb_thread;
 static K_THREAD_STACK_DEFINE(hb_stack, HB_STACK_SIZE);

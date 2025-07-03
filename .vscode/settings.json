@@ -15,7 +15,10 @@
         "xutility": "c",
         "string": "c",
         "unordered_map": "c",
-        "string_view": "c"
+        "string_view": "c",
+        "shell_commands.h": "c",
+        "uart.h": "c",
+        "mqtt.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
