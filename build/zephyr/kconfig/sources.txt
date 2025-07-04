@@ -1,3 +1,8 @@
+C:\Users\MitchellLeonard\Desktop\thingy\build\Kconfig\Kconfig.sysbuild.modules
+C:\Users\MitchellLeonard\Desktop\thingy\build\Kconfig\boards\Kconfig.sysbuild
+C:\Users\MitchellLeonard\Desktop\thingy\build\Kconfig\boards\Kconfig.thingy91x
+C:\Users\MitchellLeonard\Desktop\thingy\build\Kconfig\soc\Kconfig.soc
+C:\Users\MitchellLeonard\Desktop\thingy\build\Kconfig\soc\Kconfig.sysbuild
 C:\ncs\v3.0.2\nrf\boards\nordic\thingy91x\Kconfig.sysbuild
 C:\ncs\v3.0.2\nrf\boards\nordic\thingy91x\Kconfig.thingy91x
 C:\ncs\v3.0.2\nrf\soc\nordic\Kconfig.soc
@@ -338,8 +343,3 @@ C:\ncs\v3.0.2\zephyr\soc\xlnx\zynq7000\Kconfig.soc
 C:\ncs\v3.0.2\zephyr\soc\xlnx\zynq7000\xc7zxxx\Kconfig.soc
 C:\ncs\v3.0.2\zephyr\soc\xlnx\zynq7000\xc7zxxxs\Kconfig.soc
 C:\ncs\v3.0.2\zephyr\soc\xlnx\zynqmp\Kconfig.soc
-C:\nordic\myApps\test\build\Kconfig\Kconfig.sysbuild.modules
-C:\nordic\myApps\test\build\Kconfig\boards\Kconfig.sysbuild
-C:\nordic\myApps\test\build\Kconfig\boards\Kconfig.thingy91x
-C:\nordic\myApps\test\build\Kconfig\soc\Kconfig.soc
-C:\nordic\myApps\test\build\Kconfig\soc\Kconfig.sysbuild

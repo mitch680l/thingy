@@ -38,7 +38,7 @@ cmake:
     files:
      - C:/ncs/v3.0.2/nrf/boards/nordic/thingy91x/thingy91x_nrf9151_defconfig
      - C:/ncs/v3.0.2/nrf/samples/bootloader/prj.conf
-     - C:/nordic/myApps/test/build/b0/zephyr/.config.sysbuild
+     - C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/.config.sysbuild
     user-files:
      - C:/ncs/v3.0.2/nrf/samples/bootloader/prj.conf
   toolchain:

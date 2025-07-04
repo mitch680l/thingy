@@ -54,7 +54,7 @@ cmake:
      - C:/ncs/v3.0.2/nrf/subsys/partition_manager/ext_flash_mcuboot_secondary.conf
      - C:/ncs/v3.0.2/nrf/subsys/bootloader/image/log_minimal.conf
      - C:/ncs/v3.0.2/bootloader/mcuboot/boot/zephyr/external_crypto.conf
-     - C:/nordic/myApps/test/build/mcuboot/zephyr/.config.sysbuild
+     - C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/zephyr/.config.sysbuild
     user-files:
      - C:/ncs/v3.0.2/bootloader/mcuboot/boot/zephyr/prj.conf
      - C:/ncs/v3.0.2/bootloader/mcuboot/boot/zephyr/boards/thingy91x_nrf9151.conf

@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
+#include <stdlib.h>
 
 
 
@@ -300,7 +301,7 @@ void gnss_main_loop() {
                         
                         // Log fix rate every 10 seconds
                         if (current_time - fix_rate_start_time >= 10000) {
-                            float fix_rate = (float)fix_count_in_period / 10.0f;
+                            double  fix_rate = (float)fix_count_in_period / 10.0f;
                             LOG_INF("GNSS Fix Rate: %.1f Hz (%d fixes in 10s, total: %d)", 
                                     fix_rate, fix_count_in_period, pvt_count);
                             

@@ -39,7 +39,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("C:/nordic/myApps/test/build/mcuboot/zephyr/subsys/storage/flash_map/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/zephyr/subsys/storage/flash_map/cmake_install.cmake")
 
 endif()
 

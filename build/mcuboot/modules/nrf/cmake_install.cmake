@@ -39,13 +39,13 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("C:/nordic/myApps/test/build/mcuboot/modules/nrf/ext/cmake_install.cmake")
-  include("C:/nordic/myApps/test/build/mcuboot/modules/nrf/lib/cmake_install.cmake")
-  include("C:/nordic/myApps/test/build/mcuboot/modules/nrf/samples/cmake_install.cmake")
-  include("C:/nordic/myApps/test/build/mcuboot/modules/nrf/subsys/cmake_install.cmake")
-  include("C:/nordic/myApps/test/build/mcuboot/modules/nrf/modules/cmake_install.cmake")
-  include("C:/nordic/myApps/test/build/mcuboot/modules/nrf/drivers/cmake_install.cmake")
-  include("C:/nordic/myApps/test/build/mcuboot/modules/nrf/tests/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/modules/nrf/ext/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/modules/nrf/lib/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/modules/nrf/samples/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/modules/nrf/subsys/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/modules/nrf/modules/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/modules/nrf/drivers/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/modules/nrf/tests/cmake_install.cmake")
 
 endif()
 

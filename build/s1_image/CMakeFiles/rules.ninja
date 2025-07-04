@@ -604,7 +604,7 @@ rule C_STATIC_LIBRARY_LINKER__kernel_
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = C:\ncs\toolchains\0b393f9e1b\opt\bin\cmake.exe --regenerate-during-build -SC:\ncs\v3.0.2\bootloader\mcuboot\boot\zephyr -BC:\nordic\myApps\test\build\s1_image
+  command = C:\ncs\toolchains\0b393f9e1b\opt\bin\cmake.exe --regenerate-during-build -SC:\ncs\v3.0.2\bootloader\mcuboot\boot\zephyr -BC:\Users\MitchellLeonard\Desktop\thingy\build\s1_image
   description = Re-running CMake...
   generator = 1
 

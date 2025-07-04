@@ -2,34 +2,34 @@
 	"sources" : 
 	[
 		{
-			"file" : "C:/nordic/myApps/test/build/modules/nrf/CMakeFiles/b0"
+			"file" : "C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/CMakeFiles/b0"
 		},
 		{
-			"file" : "C:/nordic/myApps/test/build/modules/nrf/CMakeFiles/b0.rule"
+			"file" : "C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/CMakeFiles/b0.rule"
 		},
 		{
-			"file" : "C:/nordic/myApps/test/build/modules/nrf/CMakeFiles/b0-complete.rule"
+			"file" : "C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/CMakeFiles/b0-complete.rule"
 		},
 		{
-			"file" : "C:/nordic/myApps/test/build/modules/nrf/b0-prefix/src/b0-stamp/b0-build.rule"
+			"file" : "C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/b0-prefix/src/b0-stamp/b0-build.rule"
 		},
 		{
-			"file" : "C:/nordic/myApps/test/build/modules/nrf/b0-prefix/src/b0-stamp/b0-configure.rule"
+			"file" : "C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/b0-prefix/src/b0-stamp/b0-configure.rule"
 		},
 		{
-			"file" : "C:/nordic/myApps/test/build/modules/nrf/b0-prefix/src/b0-stamp/b0-download.rule"
+			"file" : "C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/b0-prefix/src/b0-stamp/b0-download.rule"
 		},
 		{
-			"file" : "C:/nordic/myApps/test/build/modules/nrf/b0-prefix/src/b0-stamp/b0-install.rule"
+			"file" : "C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/b0-prefix/src/b0-stamp/b0-install.rule"
 		},
 		{
-			"file" : "C:/nordic/myApps/test/build/modules/nrf/b0-prefix/src/b0-stamp/b0-mkdir.rule"
+			"file" : "C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/b0-prefix/src/b0-stamp/b0-mkdir.rule"
 		},
 		{
-			"file" : "C:/nordic/myApps/test/build/modules/nrf/b0-prefix/src/b0-stamp/b0-patch.rule"
+			"file" : "C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/b0-prefix/src/b0-stamp/b0-patch.rule"
 		},
 		{
-			"file" : "C:/nordic/myApps/test/build/modules/nrf/b0-prefix/src/b0-stamp/b0-update.rule"
+			"file" : "C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/b0-prefix/src/b0-stamp/b0-update.rule"
 		}
 	],
 	"target" : 

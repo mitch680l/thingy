@@ -1,13 +1,13 @@
-default: test
-build_dir: C:/nordic/myApps/test/build
+default: thingy
+build_dir: C:/Users/MitchellLeonard/Desktop/thingy/build
 domains:
-  - name: test
-    build_dir: C:/nordic/myApps/test/build/test
+  - name: thingy
+    build_dir: C:/Users/MitchellLeonard/Desktop/thingy/build/thingy
   - name: mcuboot
-    build_dir: C:/nordic/myApps/test/build/mcuboot
+    build_dir: C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot
   - name: b0
-    build_dir: C:/nordic/myApps/test/build/b0
+    build_dir: C:/Users/MitchellLeonard/Desktop/thingy/build/b0
   - name: s1_image
-    build_dir: C:/nordic/myApps/test/build/s1_image
+    build_dir: C:/Users/MitchellLeonard/Desktop/thingy/build/s1_image
 flash_order:
-  - test
+  - thingy

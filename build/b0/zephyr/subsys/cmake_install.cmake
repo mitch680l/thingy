@@ -39,101 +39,101 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/canbus/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/canbus/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/debug/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/debug/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/fb/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/fb/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/fs/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/fs/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/ipc/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/ipc/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/logging/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/logging/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/mem_mgmt/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/mem_mgmt/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/mgmt/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/mgmt/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/modbus/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/modbus/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/pm/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/pm/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/portability/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/portability/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/random/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/random/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/rtio/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/rtio/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/sd/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/sd/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/stats/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/stats/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/storage/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/storage/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/task_wdt/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/task_wdt/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/testsuite/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/testsuite/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/tracing/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/tracing/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/zephyr/subsys/usb/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/zephyr/subsys/usb/cmake_install.cmake")
 endif()
 

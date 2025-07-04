@@ -39,14 +39,14 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("C:/nordic/myApps/test/build/mcuboot/zephyr/lib/crc/cmake_install.cmake")
-  include("C:/nordic/myApps/test/build/mcuboot/zephyr/lib/libc/cmake_install.cmake")
-  include("C:/nordic/myApps/test/build/mcuboot/zephyr/lib/posix/cmake_install.cmake")
-  include("C:/nordic/myApps/test/build/mcuboot/zephyr/lib/hash/cmake_install.cmake")
-  include("C:/nordic/myApps/test/build/mcuboot/zephyr/lib/heap/cmake_install.cmake")
-  include("C:/nordic/myApps/test/build/mcuboot/zephyr/lib/mem_blocks/cmake_install.cmake")
-  include("C:/nordic/myApps/test/build/mcuboot/zephyr/lib/os/cmake_install.cmake")
-  include("C:/nordic/myApps/test/build/mcuboot/zephyr/lib/utils/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/zephyr/lib/crc/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/zephyr/lib/libc/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/zephyr/lib/posix/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/zephyr/lib/hash/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/zephyr/lib/heap/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/zephyr/lib/mem_blocks/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/zephyr/lib/os/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/zephyr/lib/utils/cmake_install.cmake")
 
 endif()
 

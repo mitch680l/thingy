@@ -1,13 +1,13 @@
 # Target labels
  b0
 # Source files and their labels
-C:/nordic/myApps/test/build/modules/nrf/CMakeFiles/b0
-C:/nordic/myApps/test/build/modules/nrf/CMakeFiles/b0.rule
-C:/nordic/myApps/test/build/modules/nrf/CMakeFiles/b0-complete.rule
-C:/nordic/myApps/test/build/modules/nrf/b0-prefix/src/b0-stamp/b0-build.rule
-C:/nordic/myApps/test/build/modules/nrf/b0-prefix/src/b0-stamp/b0-configure.rule
-C:/nordic/myApps/test/build/modules/nrf/b0-prefix/src/b0-stamp/b0-download.rule
-C:/nordic/myApps/test/build/modules/nrf/b0-prefix/src/b0-stamp/b0-install.rule
-C:/nordic/myApps/test/build/modules/nrf/b0-prefix/src/b0-stamp/b0-mkdir.rule
-C:/nordic/myApps/test/build/modules/nrf/b0-prefix/src/b0-stamp/b0-patch.rule
-C:/nordic/myApps/test/build/modules/nrf/b0-prefix/src/b0-stamp/b0-update.rule
+C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/CMakeFiles/b0
+C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/CMakeFiles/b0.rule
+C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/CMakeFiles/b0-complete.rule
+C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/b0-prefix/src/b0-stamp/b0-build.rule
+C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/b0-prefix/src/b0-stamp/b0-configure.rule
+C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/b0-prefix/src/b0-stamp/b0-download.rule
+C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/b0-prefix/src/b0-stamp/b0-install.rule
+C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/b0-prefix/src/b0-stamp/b0-mkdir.rule
+C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/b0-prefix/src/b0-stamp/b0-patch.rule
+C:/Users/MitchellLeonard/Desktop/thingy/build/modules/nrf/b0-prefix/src/b0-stamp/b0-update.rule

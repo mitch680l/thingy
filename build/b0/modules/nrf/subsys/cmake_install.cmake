@@ -39,71 +39,71 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/modules/nrf/subsys/bootloader/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/modules/nrf/subsys/bootloader/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/modules/nrf/subsys/bootloader/bl_crypto/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/modules/nrf/subsys/bootloader/bl_crypto/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/modules/nrf/subsys/bootloader/bl_validation/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/modules/nrf/subsys/bootloader/bl_validation/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/modules/nrf/subsys/bootloader/bl_storage/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/modules/nrf/subsys/bootloader/bl_storage/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/modules/nrf/subsys/net/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/modules/nrf/subsys/net/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/modules/nrf/subsys/dfu/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/modules/nrf/subsys/dfu/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/modules/nrf/subsys/mpsl/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/modules/nrf/subsys/mpsl/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/modules/nrf/subsys/fw_info/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/modules/nrf/subsys/fw_info/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/modules/nrf/subsys/logging/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/modules/nrf/subsys/logging/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/modules/nrf/subsys/shell/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/modules/nrf/subsys/shell/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/modules/nrf/subsys/debug/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/modules/nrf/subsys/debug/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/modules/nrf/subsys/partition_manager/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/modules/nrf/subsys/partition_manager/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/modules/nrf/subsys/suit/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/modules/nrf/subsys/suit/cmake_install.cmake")
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/modules/nrf/subsys/mgmt/mcumgr/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/modules/nrf/subsys/mgmt/mcumgr/cmake_install.cmake")
 endif()
 

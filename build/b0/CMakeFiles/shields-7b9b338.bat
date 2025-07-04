@@ -1,5 +1,5 @@
 @echo off
-cd /D C:\nordic\myApps\test\build\b0 || (set FAIL_LINE=2& goto :ABORT)
+cd /D C:\Users\MitchellLeonard\Desktop\thingy\build\b0 || (set FAIL_LINE=2& goto :ABORT)
 C:\ncs\toolchains\0b393f9e1b\opt\bin\cmake.exe -E echo adafruit_2_8_tft_touch_v2 || (set FAIL_LINE=3& goto :ABORT)
 C:\ncs\toolchains\0b393f9e1b\opt\bin\cmake.exe -E echo adafruit_2_8_tft_touch_v2_nano || (set FAIL_LINE=4& goto :ABORT)
 C:\ncs\toolchains\0b393f9e1b\opt\bin\cmake.exe -E echo adafruit_adalogger_featherwing || (set FAIL_LINE=5& goto :ABORT)

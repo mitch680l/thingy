@@ -100,8 +100,10 @@ rule C_COMPILER__zephyr_final_
 # Rule for linking C executable.
 
 rule C_EXECUTABLE_LINKER__zephyr_final_
-  command = cmd.exe /C "$PRE_LINK && C:\ncs\toolchains\0b393f9e1b\opt\zephyr-sdk\arm-zephyr-eabi\bin\arm-zephyr-eabi-gcc.exe $FLAGS $LINK_FLAGS $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES -L"c:/ncs/toolchains/0b393f9e1b/opt/zephyr-sdk/arm-zephyr-eabi/bin/../lib/gcc/arm-zephyr-eabi/12.2.0/thumb/v8-m.main+fp/hard" -lc -lgcc && $POST_BUILD"
+  command = cmd.exe /C "$PRE_LINK && C:\ncs\toolchains\0b393f9e1b\opt\zephyr-sdk\arm-zephyr-eabi\bin\arm-zephyr-eabi-gcc.exe $FLAGS $LINK_FLAGS @$RSP_FILE -o $TARGET_FILE -L"c:/ncs/toolchains/0b393f9e1b/opt/zephyr-sdk/arm-zephyr-eabi/bin/../lib/gcc/arm-zephyr-eabi/12.2.0/thumb/v8-m.main+fp/hard" -lc -lgcc && $POST_BUILD"
   description = Linking C executable $TARGET_FILE
+  rspfile = $RSP_FILE
+  rspfile_content = $in $LINK_PATH $LINK_LIBRARIES
   restat = $RESTAT
 
 
@@ -585,7 +587,7 @@ rule C_STATIC_LIBRARY_LINKER__kernel_
 # Rule for re-running cmake.
 
 rule RERUN_CMAKE
-  command = C:\ncs\toolchains\0b393f9e1b\opt\bin\cmake.exe --regenerate-during-build -SC:\ncs\v3.0.2\nrf\samples\bootloader -BC:\nordic\myApps\test\build\b0
+  command = C:\ncs\toolchains\0b393f9e1b\opt\bin\cmake.exe --regenerate-during-build -SC:\ncs\v3.0.2\nrf\samples\bootloader -BC:\Users\MitchellLeonard\Desktop\thingy\build\b0
   description = Re-running CMake...
   generator = 1
 

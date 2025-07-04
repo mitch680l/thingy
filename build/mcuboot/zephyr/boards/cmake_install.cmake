@@ -39,8 +39,8 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("C:/nordic/myApps/test/build/mcuboot/zephyr/boards/boards/arm/thingy91x/cmake_install.cmake")
-  include("C:/nordic/myApps/test/build/mcuboot/zephyr/boards/shields/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/zephyr/boards/boards/arm/thingy91x/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/mcuboot/zephyr/boards/shields/cmake_install.cmake")
 
 endif()
 

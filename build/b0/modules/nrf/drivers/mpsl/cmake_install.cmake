@@ -39,6 +39,6 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for the subdirectory.
-  include("C:/nordic/myApps/test/build/b0/modules/nrf/drivers/mpsl/flash_sync/cmake_install.cmake")
+  include("C:/Users/MitchellLeonard/Desktop/thingy/build/b0/modules/nrf/drivers/mpsl/flash_sync/cmake_install.cmake")
 endif()
 
