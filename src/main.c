@@ -36,7 +36,6 @@ static struct k_thread mqtt_thread_data;
 /*Logging*/
 LOG_MODULE_REGISTER(loop, LOG_LEVEL_INF);
 
-/**/
 int publish_all() {
     int err = 0;
     static char topic[200];
@@ -70,7 +69,7 @@ static void mqtt_handle() {
     int err;
     int start_time = k_uptime_get_32();
     
-    // Time the poll operation
+   
     int poll_start = k_uptime_get_32();
     int ret = poll(&fds, 1, 0);
     int poll_time = k_uptime_get_32() - poll_start;
@@ -87,13 +86,12 @@ static void mqtt_handle() {
     
     LOG_DBG("MQTT Publish");
     
-    // Time the publish operation
     int publish_start = k_uptime_get_32();
     err = publish_all();
     int publish_time = k_uptime_get_32() - publish_start;
     LOG_DBG("publish_all() took: %d ms", publish_time);
     
-    // Time the error handling and heartbeat
+    
     int error_handling_start = k_uptime_get_32();
     if (err) {
         LOG_ERR("data_publish: %d", err);
@@ -106,9 +104,20 @@ static void mqtt_handle() {
     int error_handling_time = k_uptime_get_32() - error_handling_start;
     LOG_DBG("Error handling and heartbeat took: %d ms", error_handling_time);
     
-    // Total function time
     int total_time = k_uptime_get_32() - start_time;
     LOG_DBG("Total mqtt_handle() took: %d ms", total_time);
+}
+
+void shell() {
+    k_sleep(K_SECONDS(1));
+    shell_mqtt_init();
+    LOG_INF("Shell Initialized");
+	LOG_INF("Tracker Demo Version %d.%d.%d started\n",CONFIG_TRACKER_VERSION_MAJOR,CONFIG_TRACKER_VERSION_MINOR,CONFIG_TRACKER_VERSION_PATCH);
+	LOG_INF("Device ID: %s", mqtt_client_id);
+    LOG_INF("MQTT Broker Host: %s", mqtt_broker_host);
+    LOG_INF("MQTT Broker Port: %d", mqtt_broker_port);
+    LOG_INF("MQTT Publish Interval (sec): %d", mqtt_publish_interval);
+    LOG_INF("MQTT Connection Keep Alive (sec): %d", mqtt_keepalive);
 }
 
 void mqtt_thread_fn(void *arg1, void *arg2, void *arg3) {
@@ -121,47 +130,24 @@ void mqtt_thread_fn(void *arg1, void *arg2, void *arg3) {
     }
 }
 
-static int init() {
+void mqtt_init() {
     int err;
-    k_thread_priority_set(k_current_get(), 13);
-	k_sleep(K_SECONDS(1));
-    shell_mqtt_init();
-    LOG_INF("Shell Initialized");
-	LOG_INF("Tracker Demo Version %d.%d.%d started\n",CONFIG_TRACKER_VERSION_MAJOR,CONFIG_TRACKER_VERSION_MINOR,CONFIG_TRACKER_VERSION_PATCH);
-	LOG_INF("Device ID: %s", mqtt_client_id);
-    LOG_INF("MQTT Broker Host: %s", mqtt_broker_host);
-    LOG_INF("MQTT Broker Port: %d", mqtt_broker_port);
-    LOG_INF("MQTT Publish Interval (sec): %d", mqtt_publish_interval);
-    LOG_INF("MQTT Connection Keep Alive (sec): %d", mqtt_keepalive);
     
-
-    gnss_int();
-	err = dk_leds_init();
-	if (err){
-		LOG_ERR("Failed to initialize the LEDs Library");
-        return err;
-	}
-    heartbeat_config(HB_COLOR_RED, 1, 500);
-    LOG_INF("Initializing modem");
-	err = modem_configure();
-    if (err) {
-        LOG_ERR("nrf_modem_lib_init failed: %d", err);
-        return err;
-    }
-    LOG_INF("Modem initialized");
     LOG_INF("Connecting to MQTT broker");
+    
+    
+    
     err = client_init(&client);
     if (err) {
         LOG_ERR("client_init: %d", err);
-        return err;
     }
+    
     err = mqtt_connect(&client);
     if (err) {
         LOG_ERR("mqtt_connect: %d", err);
-        return err;
     }
 
-    k_sleep(K_SECONDS(1));
+    k_sleep(K_SECONDS(3));
 
     k_thread_create(&mqtt_thread_data, mqtt_thread_stack,
                 K_THREAD_STACK_SIZEOF(mqtt_thread_stack),
@@ -172,9 +158,32 @@ static int init() {
     err = fds_init(&client, &fds);
     if (err) {
         LOG_ERR("fds_init: %d", err);
+    }
+}
+
+
+
+static int init() {
+    int err;
+    k_thread_priority_set(k_current_get(), 13);
+	shell();
+    gnss_int();
+	err = dk_leds_init();
+	if (err){
+		LOG_ERR("Failed to initialize the LEDs Library");
+        return err;
+	}
+    
+    heartbeat_config(HB_COLOR_RED, 1, 500);
+    LOG_INF("Initializing modem");
+	err = modem_configure();
+    if (err) {
+        LOG_ERR("nrf_modem_lib_init failed: %d", err);
         return err;
     }
-
+    LOG_INF("Modem initialized");
+    k_sleep(K_SECONDS(5));
+    mqtt_init();
     heartbeat_config(HB_COLOR_BLUE, 1, 500);
     return 0;
 }
@@ -206,7 +215,3 @@ int main(void) {
     }
     return 0;
 }
-
-
-
-

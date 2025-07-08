@@ -47,26 +47,22 @@ struct __attribute__((packed)) ubx_nav_pvt_t {
 };
 
 
-void ubx_checksum(const uint8_t *data, size_t len, uint8_t *ck_a, uint8_t *ck_b);
+static void ubx_checksum(const uint8_t *data, size_t len, uint8_t *ck_a, uint8_t *ck_b);
 
-void print_nav_pvt_json(const struct ubx_nav_pvt_t *pvt);
+static void print_nav_pvt_json(const struct ubx_nav_pvt_t *pvt);
 
-bool parse_nav_pvt(const uint8_t *buf, size_t len, struct ubx_nav_pvt_t *out);
+static bool parse_nav_pvt(const uint8_t *buf, size_t len, struct ubx_nav_pvt_t *out);
 
-bool parse_ack(const uint8_t *buf, size_t len, uint8_t cls, uint8_t id);
+static bool parse_ack(const uint8_t *buf, size_t len, uint8_t cls, uint8_t id);
 
-bool send_ubx_message(uint8_t *msg, size_t len, const char *desc);
+static bool send_ubx_message(uint8_t *msg, size_t len, const char *desc);
 
-bool configure_gps_10hz(void);
+static bool configure_gps_10hz(void);
 
 void gnss_main_loop();
 void gnss_int();
 
-extern uint8_t rxbuf[512]; 
-extern struct ubx_nav_pvt_t pvt;
-extern uint32_t last_tow;
-extern int pvt_count;
-extern int read_count;
+
 extern char json_payload[512];
 extern struct k_mutex json_mutex;
 #endif

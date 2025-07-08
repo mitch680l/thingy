@@ -18,4 +18,5 @@ int fds_init(struct mqtt_client *c, struct pollfd *fds);
 int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 	uint8_t *data, size_t len, const char *mqtt_publish_topic);
 
+void provision_cert(void);
 #endif /* _CONNECTION_H_ */

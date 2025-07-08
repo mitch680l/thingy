@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h> 
+#include "mqtt_connection.h"
 #include <zephyr/device.h>     
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/devicetree.h>   

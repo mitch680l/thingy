@@ -20,7 +20,6 @@ char mqtt_broker_host[MQTT_MAX_STR_LEN]     = CONFIG_MQTT_BROKER_HOSTNAME;
 int  mqtt_broker_port                  = CONFIG_MQTT_BROKER_PORT;
 int  mqtt_publish_interval             = CONFIG_MQTT_PUBLISH_INTERVAL;
 int  mqtt_keepalive                    = CONFIG_MQTT_KEEPALIVE;
-
 /* Called by settings_load() for each “mqtt/<key>” entry */
 static int mqtt_settings_set(const char *name, size_t len_rd,
                              settings_read_cb read_cb, void *cb_arg)
