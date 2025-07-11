@@ -47,17 +47,17 @@ struct __attribute__((packed)) ubx_nav_pvt_t {
 };
 
 
-static void ubx_checksum(const uint8_t *data, size_t len, uint8_t *ck_a, uint8_t *ck_b);
+void ubx_checksum(const uint8_t *data, size_t len, uint8_t *ck_a, uint8_t *ck_b);
 
-static void print_nav_pvt_json(const struct ubx_nav_pvt_t *pvt);
+void print_nav_pvt_json(const struct ubx_nav_pvt_t *pvt);
 
-static bool parse_nav_pvt(const uint8_t *buf, size_t len, struct ubx_nav_pvt_t *out);
+bool parse_nav_pvt(const uint8_t *buf, size_t len, struct ubx_nav_pvt_t *out);
 
-static bool parse_ack(const uint8_t *buf, size_t len, uint8_t cls, uint8_t id);
+bool parse_ack(const uint8_t *buf, size_t len, uint8_t cls, uint8_t id);
 
-static bool send_ubx_message(uint8_t *msg, size_t len, const char *desc);
+bool send_ubx_message(uint8_t *msg, size_t len, const char *desc);
 
-static bool configure_gps_10hz(void);
+bool configure_gps_10hz(void);
 
 void gnss_main_loop();
 void gnss_int();

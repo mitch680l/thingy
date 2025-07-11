@@ -89,7 +89,7 @@ const struct device *gpio0 = DEVICE_DT_GET(GPIO0_NODE);
 const struct device *i2c_dev = DEVICE_DT_GET(I2C_NODE);
 
 // Helper functions
-static inline void ubx_checksum(const uint8_t *data, size_t len, uint8_t *ck_a, uint8_t *ck_b) {
+inline void ubx_checksum(const uint8_t *data, size_t len, uint8_t *ck_a, uint8_t *ck_b) {
     *ck_a = 0;
     *ck_b = 0;
     for (size_t i = 0; i < len; i++) {
@@ -98,7 +98,7 @@ static inline void ubx_checksum(const uint8_t *data, size_t len, uint8_t *ck_a, 
     }
 }
 
-static const struct gps_rate_config* get_rate_config(uint8_t target_hz) {
+const struct gps_rate_config* get_rate_config(uint8_t target_hz) {
     for (int i = 0; i < ARRAY_SIZE(rate_configs); i++) {
         if (rate_configs[i].rate_hz == target_hz) {
             return &rate_configs[i];
@@ -132,7 +132,7 @@ void format_nav_pvt_json(const struct ubx_nav_pvt_t *pvt) {
     k_mutex_unlock(&json_mutex);
 }
 
-static bool parse_nav_pvt(const uint8_t *buf, size_t len, struct ubx_nav_pvt_t *out) {
+bool parse_nav_pvt(const uint8_t *buf, size_t len, struct ubx_nav_pvt_t *out) {
     // Optimized parser with early exit conditions
     if (len < 8 + NAV_PVT_LEN) return false;
     
@@ -165,7 +165,7 @@ static bool parse_nav_pvt(const uint8_t *buf, size_t len, struct ubx_nav_pvt_t *
     return false;
 }
 
-static size_t process_gps_data(const uint8_t *new_data, size_t new_len) {
+size_t process_gps_data(const uint8_t *new_data, size_t new_len) {
     size_t processed = 0;
     
     // Combine with partial buffer if we have leftover data
@@ -214,7 +214,7 @@ static size_t process_gps_data(const uint8_t *new_data, size_t new_len) {
     return processed;
 }
 
-static bool parse_ack(const uint8_t *buf, size_t len, uint8_t cls, uint8_t id) {
+bool parse_ack(const uint8_t *buf, size_t len, uint8_t cls, uint8_t id) {
     if (len < 10) return false;
     
     for (size_t i = 0; i <= len - 10; i++) {
@@ -229,7 +229,7 @@ static bool parse_ack(const uint8_t *buf, size_t len, uint8_t cls, uint8_t id) {
     return false;
 }
 
-static bool send_ubx_message(uint8_t *msg, size_t len, const char *desc) {
+bool send_ubx_message(uint8_t *msg, size_t len, const char *desc) {
     // Calculate checksum
     uint8_t ck_a, ck_b;
     ubx_checksum(&msg[2], len - 4, &ck_a, &ck_b);
@@ -262,7 +262,7 @@ static bool send_ubx_message(uint8_t *msg, size_t len, const char *desc) {
     return false;
 }
 
-static bool configure_gps_rate(uint8_t target_hz) {
+bool configure_gps_rate(uint8_t target_hz) {
     const struct gps_rate_config *config = get_rate_config(target_hz);
     bool success = false;
     
