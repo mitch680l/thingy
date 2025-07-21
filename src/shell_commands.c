@@ -1,225 +1,167 @@
-// src/shell_commands.c
-
-#include <zephyr/shell/shell.h>
-#include <zephyr/logging/log.h>
-#include <zephyr/settings/settings.h>      /* Settings API */
-#include <string.h>                 /* strcmp(), strcpy(), strlen() */
-#include <stdlib.h>                 /* atoi() */
-#include <stdio.h>                  /* snprintk() */
 
 #include "shell_commands.h"
+char mqtt_client_id[MQTT_MAX_STR_LEN] = "nrid4148";               
+char firmware_filename[MQTT_MAX_STR_LEN] = "blinky_2.signed.bin";
+int  mqtt_broker_port = 8883;
+int interval_mqtt = 1000;
+int interval_gnss = 1000;
+int interval_main = 1000;
+psa_key_id_t my_key_id = 0x00000005;
+psa_key_handle_t my_key_handle;
+/* call this before you read them */
+#define PROVISIONING_SUCCESS            (0)
+#define PROVISIONING_ERROR_CRYPTO_INIT  (-100)
+#define PROVISIONING_ERROR_KEY_IMPORT   (-101)
+#define PROVISIONING_ERROR_KEY_OPEN     (-102)
+#define PROVISIONING_ERROR_ENCRYPT      (-103)
+#define PROVISIONING_ERROR_DECRYPT      (-104)
+#define PROVISIONING_ERROR_IV_GEN       (-105)
+#define PROVISIONING_ERROR_VERIFICATION (-106)
+#define PROVISIONING_ERROR_KEY_DESTROY  (-107)
+#define PROVISIONING_ERROR_BUFFER_SIZE  (-108)
+#define NRF_CRYPTO_EXAMPLE_AES_MAX_TEXT_SIZE (100)
+#define NRF_CRYPTO_EXAMPLE_AES_BLOCK_SIZE (16)
+#define NRF_CRYPTO_EXAMPLE_AES_IV_SIZE (12)
+#define NRF_CRYPTO_EXAMPLE_AES_ADDITIONAL_SIZE (35)
+#define NRF_CRYPTO_EXAMPLE_AES_GCM_TAG_LENGTH (16)
+#define AES_KEY_SIZE (32)  // 256-bit key
 
-LOG_MODULE_REGISTER(shell_cmds);
+LOG_MODULE_REGISTER(aes_gcm, LOG_LEVEL_DBG);
+/*Hostname(MQTT)*/
+static uint8_t config_iv_1[12] = {0x97, 0xd4, 0xbf, 0x13, 0x8c, 0x0c, 0x04, 0x72, 0x86, 0xeb, 0xb9, 0xb4};
 
-#define MQTT_MAX_STR_LEN 128
+static uint8_t encrypted_config_1[57] = {0xcd, 0x6a, 0x92, 0xb4, 0xbe, 0xe9, 0xd1, 0x8d, 0x94, 0x38, 0x26, 0xbc, 0x8d, 0x51, 0x71, 0x1a, 0x92, 0x1f, 0x0a, 0x1a, 0xb1, 0x3a, 0xcb, 
+0x7c, 0xb5, 0x37, 0x92, 0x4b, 0x40, 0x32, 0x7c, 0x38, 0x5d, 0x02, 0xb0, 0x30, 0x82, 0x5a, 0x4a, 0xfd, 0x7b, 0x1f, 0xac, 0x22, 0xee, 0x3a, 0x8c, 0xe9, 0x29, 0xbe, 0x72, 0x45, 0x77, 0x40, 0x28, 0x4b, 0xaa};
 
-/* In-RAM settings, seeded from CONFIG_ macros */
-char mqtt_client_id[MQTT_MAX_STR_LEN]  = CONFIG_MQTT_CLIENT_ID;
-char mqtt_subscribe_topic[MQTT_MAX_STR_LEN] = CONFIG_MQTT_SUB_TOPIC;
-char mqtt_broker_host[MQTT_MAX_STR_LEN]     = CONFIG_MQTT_BROKER_HOSTNAME;
-int  mqtt_broker_port                  = CONFIG_MQTT_BROKER_PORT;
-int  mqtt_publish_interval             = CONFIG_MQTT_PUBLISH_INTERVAL;
-int  mqtt_keepalive                    = CONFIG_MQTT_KEEPALIVE;
-/* Called by settings_load() for each “mqtt/<key>” entry */
-static int mqtt_settings_set(const char *name, size_t len_rd,
-                             settings_read_cb read_cb, void *cb_arg)
+static uint8_t additional_auth_data_1[19] = {0x46, 0x69, 0x65, 0x6c, 0x64, 0x5f, 0x6d, 0x71, 0x74, 0x74, 0x5f, 0x68, 0x6f, 0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65};
+
+/*Hostname(HTTP)*/
+static uint8_t config_iv_2[12] = {0x77, 0xb8, 0xdf, 0xb6, 0xc2, 0x75, 0xdb, 0xbb, 0x37, 0x0b, 0x2d, 0x40};
+
+static uint8_t encrypted_config_2[29] = {0x4b, 0xe6, 0xd0, 0x29, 0x89, 0x4e, 0x76, 0x82, 0x20, 0xf5, 0x1c, 0x10, 0xec, 0x9a, 0xc1, 0xb5, 0x78, 0xc9, 0xdb, 0x67, 0x98, 0x56, 0xf0, 
+0x48, 0x0d, 0x77, 0x56, 0x6c, 0x4b};
+
+static uint8_t additional_auth_data_2[14] = {0x46, 0x69, 0x65, 0x6c, 0x64, 0x5f, 0x68, 0x6f, 0x73, 0x74, 0x6e, 0x61, 0x6d, 0x65};
+
+/*password*/
+static uint8_t config_iv_3[12] = {0x09, 0x24, 0xc2, 0x18, 0xae, 0x73, 0xd3, 0x60, 0x80, 0x60, 0x2b, 0x65};
+
+static uint8_t encrypted_config_3[27] = {0x4b, 0xc3, 0x23, 0x95, 0x58, 0x07, 0x57, 0x8c, 0x94, 0x9f, 0xb6, 0x3b, 0xe8, 0xe1, 0x96, 0xe5, 0xc9, 0x08, 0xe2, 0xd0, 0x05, 0x43, 0xf2, 
+0x01, 0xfa, 0x48, 0x2a};
+
+static uint8_t additional_auth_data_3[14] = {0x46, 0x69, 0x65, 0x6c, 0x64, 0x5f, 0x70, 0x61, 0x73, 0x73, 0x77, 0x6f, 0x72, 0x64};
+
+
+/*Username*/
+static uint8_t config_iv_4[12] = {0x2d, 0xca, 0x77, 0xc8, 0x9b, 0xfa, 0x67, 0x8f, 0xc9, 0x73, 0xcf, 0x70};
+
+static uint8_t encrypted_config_4[21] = {0xfe, 0x66, 0xa7, 0x80, 0x0c, 0xfe, 0x28, 0xf3, 0xbf, 0xee, 0x2c, 0x73, 0x2e, 0x14, 0xa0, 0xbb, 0x37, 0x6f, 0xba, 0xe0, 0x78};
+
+static uint8_t additional_auth_data_4[14] = {0x46, 0x69, 0x65, 0x6c, 0x64, 0x5f, 0x75, 0x73, 0x65, 0x72, 0x6e, 0x61, 0x6d, 0x65};
+
+void secure_memzero(void *v, size_t n)
 {
-    char buf[MQTT_MAX_STR_LEN];
-
-    if (strcmp(name, "device-id") == 0 && len_rd < sizeof(mqtt_client_id)) {
-        read_cb(cb_arg, mqtt_client_id, len_rd);
-        mqtt_client_id[len_rd] = '\0';
-
-    } else if (strcmp(name, "subscribe-topic") == 0 && len_rd < sizeof(mqtt_subscribe_topic)) {
-        read_cb(cb_arg, mqtt_subscribe_topic, len_rd);
-        mqtt_subscribe_topic[len_rd] = '\0';
-
-    } else if (strcmp(name, "broker-host") == 0 && len_rd < sizeof(mqtt_broker_host)) {
-        read_cb(cb_arg, mqtt_broker_host, len_rd);
-        mqtt_broker_host[len_rd] = '\0';
-
-    } else if (strcmp(name, "broker-port") == 0 && len_rd < sizeof(buf)) {
-        read_cb(cb_arg, buf, len_rd);
-        buf[len_rd] = '\0';
-        mqtt_broker_port = atoi(buf);
-
-    } else if (strcmp(name, "publish-interval") == 0 && len_rd < sizeof(buf)) {
-        read_cb(cb_arg, buf, len_rd);
-        buf[len_rd] = '\0';
-        mqtt_publish_interval = atoi(buf);
-
-    } else if (strcmp(name, "keepalive") == 0 && len_rd < sizeof(buf)) {
-        read_cb(cb_arg, buf, len_rd);
-        buf[len_rd] = '\0';
-        mqtt_keepalive = atoi(buf);
-    }else {
-        return -ENOENT;
+    volatile uint8_t *p = (volatile uint8_t *)v;
+    while (n--) {
+        *p++ = 0;
     }
-    return 0;
 }
 
-static struct settings_handler mqtt_sh = {
-    .name  = "mqtt",
-    .h_set = mqtt_settings_set,
-};
-
-/* Persist a single key under "mqtt/<key>" */
-static int save_mqtt_kv(const char *key, const void *data, size_t len)
+int open_persistent_key()
 {
-    char fullkey[32];
-    int  rv = snprintk(fullkey, sizeof(fullkey), "mqtt/%s", key);
-    if (rv < 0 || rv >= (int)sizeof(fullkey)) {
-        return -ENOMEM;
+    psa_status_t status;
+
+    status = psa_open_key(my_key_id, &my_key_handle);
+    if (status != PSA_SUCCESS) {
+        LOG_ERR("psa_open_key(0x%08x) failed: %d", my_key_id, status);
+        return status;
     }
-    return settings_save_one(fullkey, data, len);
+
+    LOG_INF("Persistent key 0x%08x opened successfully", my_key_id);
+    return status;
 }
 
-/* mqtt set <key> <value> */
-static int cmd_mqtt_set(const struct shell *sh, size_t argc, char **argv)
+int decrypt_config_field_data(const char *encrypted_data, size_t encrypted_len,
+                              const char *iv,
+                              const char *additional_data, size_t additional_len,
+                              char *output_buf, size_t *output_len)
 {
-    const char *key   = argv[1];
-    const char *value = argv[2];
-    int          rc   = 0;
-
-    if (!strcmp(key, "device-id")) {
-        if (strlen(value) >= sizeof(mqtt_client_id)) {
-            shell_error(sh, "Value too long");
-            return -EINVAL;
-        }
-        strcpy(mqtt_client_id, value);
-        rc = save_mqtt_kv(key, mqtt_client_id, strlen(mqtt_client_id));
-
+    if (!encrypted_data || !iv || !additional_data || !output_buf || !output_len) {
+        LOG_ERR("Invalid input to decrypt_config_field_data");
+        return PROVISIONING_ERROR_BUFFER_SIZE;
     }
 
-    else if (!strcmp(key, "subscribe-topic")) {
-        if (strlen(value) >= sizeof(mqtt_subscribe_topic)) {
-            shell_error(sh, "Value too long");
-            return -EINVAL;
-        }
-        strcpy(mqtt_subscribe_topic, value);
-        rc = save_mqtt_kv(key, mqtt_subscribe_topic, strlen(mqtt_subscribe_topic));
+    psa_status_t status;
 
-    } else if (!strcmp(key, "broker-host")) {
-        if (strlen(value) >= sizeof(mqtt_broker_host)) {
-            shell_error(sh, "Value too long");
-            return -EINVAL;
-        }
-        strcpy(mqtt_broker_host, value);
-        rc = save_mqtt_kv(key, mqtt_broker_host, strlen(mqtt_broker_host));
+    LOG_INF("Decrypting config field...");
 
-    } else if (!strcmp(key, "broker-port")) {
-        mqtt_broker_port = atoi(value);
-        char buf[16];
-        int  len = snprintk(buf, sizeof(buf), "%d", mqtt_broker_port);
-        rc = save_mqtt_kv(key, buf, len);
+    status = psa_aead_decrypt(my_key_id,
+                              PSA_ALG_GCM,
+                              iv, NRF_CRYPTO_EXAMPLE_AES_IV_SIZE,
+                              additional_data, additional_len,
+                              encrypted_data, encrypted_len,
+                              output_buf, NRF_CRYPTO_EXAMPLE_AES_MAX_TEXT_SIZE,
+                              output_len);
 
-    } else if (!strcmp(key, "publish-interval")) {
-        mqtt_publish_interval = atoi(value);
-        char buf[16];
-        int  len = snprintk(buf, sizeof(buf), "%d", mqtt_publish_interval);
-        rc = save_mqtt_kv(key, buf, len);
+    if (status != PSA_SUCCESS) {
+        LOG_ERR("Field decryption failed (psa_status: %d)", status);
+        return PROVISIONING_ERROR_DECRYPT;
+    }
 
-    } else if (!strcmp(key, "keepalive")) {
-        mqtt_keepalive = atoi(value);
-        char buf[16];
-        int  len = snprintk(buf, sizeof(buf), "%d", mqtt_keepalive);
-        rc = save_mqtt_kv(key, buf, len);
+    LOG_INF("Field decryption successful (length: %u)", *output_len);
+    return PROVISIONING_SUCCESS;
+}
 
+
+void get_mqtt_host(char *output_buf, size_t *output_len) {
+
+   
+
+    int ret = decrypt_config_field_data(encrypted_config_1, sizeof(encrypted_config_1),
+                                        config_iv_1, additional_auth_data_1, sizeof(additional_auth_data_1),
+                                        output_buf, &output_len);
+    
+    if (ret == PROVISIONING_SUCCESS) {
+        LOG_INF("Decrypted MQTT Host: %.*s", (int)output_len, output_buf);
     } else {
-        shell_error(sh, "Unknown key '%s'", key);
-        return -EINVAL;
+        LOG_ERR("Failed to decrypt MQTT Host: %d", ret);
     }
+}
 
-    if (rc) {
-        shell_error(sh, "Failed to save '%s' (%d)", key, rc);
+void get_http_host(char  *output_buf, size_t *output_len) {
+
+    int ret = decrypt_config_field_data(encrypted_config_2, sizeof(encrypted_config_2),
+                                        config_iv_2, additional_auth_data_2, sizeof(additional_auth_data_2),
+                                        output_buf, &output_len);
+   
+    if (ret == PROVISIONING_SUCCESS) {
+        LOG_INF("Decrypted http host: %.*s", (int)output_len, output_buf); 
     } else {
-        shell_print(sh, "%s = %s", key, value);
+        LOG_ERR("Failed to decrypt http host: %d", ret);
     }
-    return rc;
+
 }
 
-/* mqtt get <key> */
-static int cmd_mqtt_get(const struct shell *sh, size_t argc, char **argv)
-{
-    const char *key = argv[1];
+void get_password(char  *output_buf, size_t *output_len) {
 
-    if (!strcmp(key, "device-id")) {
-        shell_print(sh, "%s", mqtt_client_id);
-    } else if (!strcmp(key, "subscribe-topic")) {
-        shell_print(sh, "%s", mqtt_subscribe_topic);
-    } else if (!strcmp(key, "broker-host")) {
-        shell_print(sh, "%s", mqtt_broker_host);
-    } else if (!strcmp(key, "broker-port")) {
-        shell_print(sh, "%d", mqtt_broker_port);
-    } else if (!strcmp(key, "publish-interval")) {
-        shell_print(sh, "%d", mqtt_publish_interval);
-    } else if (!strcmp(key, "keepalive")) {
-        shell_print(sh, "%d", mqtt_keepalive);
+    int ret = decrypt_config_field_data(encrypted_config_3, sizeof(encrypted_config_3),
+                                        config_iv_3, additional_auth_data_3, sizeof(additional_auth_data_3),
+                                        output_buf, &output_len);
+    if (ret == PROVISIONING_SUCCESS) {
+        LOG_INF("Decrypted password: %.*s", (int)output_len, output_buf);
     } else {
-        shell_error(sh, "Unknown key '%s'", key);
-        return -EINVAL;
+        LOG_ERR("Failed to decrypt password: %d", ret);
     }
 
-    return 0;
 }
 
-/* mqtt factory-default */
-static int cmd_mqtt_factory(const struct shell *sh, size_t argc, char **argv)
-{
-    int rc = 0;
-    char buf[16];
-    int  len;
-
-    /* 1) Reset RAM vars to CONFIG_ defaults */
-    strcpy(mqtt_client_id,   CONFIG_MQTT_CLIENT_ID);
-    strcpy(mqtt_subscribe_topic, CONFIG_MQTT_SUB_TOPIC);
-    strcpy(mqtt_broker_host,     CONFIG_MQTT_BROKER_HOSTNAME);
-    mqtt_broker_port      = CONFIG_MQTT_BROKER_PORT;
-    mqtt_publish_interval = CONFIG_MQTT_PUBLISH_INTERVAL;
-    mqtt_keepalive        = CONFIG_MQTT_KEEPALIVE;
-
-    /* 2) Persist each back to flash */
-    rc |= save_mqtt_kv("device-id",   mqtt_client_id,   strlen(mqtt_client_id));
-    rc |= save_mqtt_kv("subscribe-topic", mqtt_subscribe_topic, strlen(mqtt_subscribe_topic));
-    rc |= save_mqtt_kv("broker-host",     mqtt_broker_host,     strlen(mqtt_broker_host));
-
-    len = snprintk(buf, sizeof(buf), "%d", mqtt_broker_port);
-    rc |= save_mqtt_kv("broker-port", buf, len);
-
-    len = snprintk(buf, sizeof(buf), "%d", mqtt_publish_interval);
-    rc |= save_mqtt_kv("publish-interval", buf, len);
-
-    len = snprintk(buf, sizeof(buf), "%d", mqtt_keepalive);
-    rc |= save_mqtt_kv("keepalive", buf, len);
-
-    if (rc) {
-        shell_error(sh, "Failed to restore defaults (%d)", rc);
-        return rc;
+void get_mqtt_username(char  *output_buf, size_t *output_len) {
+    int ret = decrypt_config_field_data(encrypted_config_4, sizeof(encrypted_config_4),
+                                        config_iv_4, additional_auth_data_4, sizeof(additional_auth_data_4),
+                                        output_buf, &output_len);
+    if (ret == PROVISIONING_SUCCESS) {
+        LOG_INF("Decrypted username: %.*s", (int)output_len, output_buf);
+    } else {
+        LOG_ERR("Failed to decrypt username: %d", ret);
     }
-    shell_print(sh, "All MQTT settings reset to factory defaults");
-    return 0;
-}
-
-SHELL_STATIC_SUBCMD_SET_CREATE(mqtt_cmds,
-    SHELL_CMD_ARG(set, NULL,
-                  "mqtt set <device-id|subscribe-topic|broker-host|broker-port|publish-interval|keepalive> <value>",
-                  cmd_mqtt_set, 3, 0),
-    SHELL_CMD_ARG(get, NULL,
-                  "mqtt get <device-id|subscribe-topic|broker-host|broker-port|publish-interval|keepalive>",
-                  cmd_mqtt_get, 2, 0),
-    SHELL_CMD_ARG(factory-default, NULL,
-                  "mqtt factory-default: restore all keys to CONFIG_ defaults",
-                  cmd_mqtt_factory, 1, 0),
-    SHELL_SUBCMD_SET_END
-);
-
-SHELL_CMD_REGISTER(mqtt, &mqtt_cmds,
-                   "MQTT configuration (persisted in flash)", NULL);
-
-/* Call this from main() before shell starts */
-void shell_mqtt_init(void)
-{
-    settings_subsys_init();
-    settings_register(&mqtt_sh);
-    settings_load();   /* load all mqtt keys into RAM */
 }

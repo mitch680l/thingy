@@ -5,17 +5,17 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 #include "gnss.h"
+#include "shell_commands.h" 
 #include <stdio.h>
 #include <string.h>
 #include <inttypes.h>
 #include <stdlib.h>
 
 // Configuration constants
-#define GPS_TARGET_RATE_HZ 25  // Change this to desired rate (1, 5, 10, 25 Hz)
-#define GPS_READ_BUFFER_SIZE 1024  // Larger buffer for high-speed reads
-#define GPS_READ_INTERVAL_MS (1000 / (GPS_TARGET_RATE_HZ * 3))  // Read 3x faster than target rate
-#define GPS_STARTUP_DELAY_MS 2000  // Startup delay
-#define GPS_CONFIG_TIMEOUT_MS 500  // Configuration timeout
+#define GPS_TARGET_RATE_HZ 25 
+#define GPS_READ_BUFFER_SIZE 1024  
+#define GPS_STARTUP_DELAY_MS 2000  
+#define GPS_CONFIG_TIMEOUT_MS 500  
 #define GPS_MAX_CONFIG_ATTEMPTS 3
 
 // Rate configuration lookup table
@@ -343,7 +343,7 @@ void gnss_main_loop(void) {
     uint32_t current_time = k_uptime_get_32();
     
     // Adaptive read timing based on target rate
-    if (current_time - last_read_time < GPS_READ_INTERVAL_MS) {
+    if (current_time - last_read_time < 1000 / GPS_TARGET_RATE_HZ) {
         k_sleep(K_MSEC(1));  // Small sleep to prevent busy waiting
         return;
     }

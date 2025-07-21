@@ -18,7 +18,16 @@
         "string_view": "c",
         "shell_commands.h": "c",
         "uart.h": "c",
-        "mqtt.h": "c"
+        "mqtt.h": "c",
+        "nrf_cloud_log.h": "c",
+        "nrf_cloud_codec.h": "c",
+        "nrf_cloud.h": "c",
+        "fota_download.h": "c",
+        "downloader.h": "c",
+        "fota.h": "c",
+        "stdio.h": "c",
+        "dfu_target_mcuboot.h": "c",
+        "mqtt_connection.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }

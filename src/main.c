@@ -20,6 +20,9 @@
 #include "heartbeat.h"
 #include "lte_helper.h"
 #include "shell_commands.h"
+#include "fota.h"
+
+
 
 #define MQTT_THREAD_STACK_SIZE 2048
 #define MQTT_THREAD_PRIORITY 1
@@ -68,8 +71,8 @@ int publish_all() {
 static void mqtt_handle() {
     int err;
     int start_time = k_uptime_get_32();
+    k_sleep(K_MSEC(interval_mqtt));
     
-   
     int poll_start = k_uptime_get_32();
     int ret = poll(&fds, 1, 0);
     int poll_time = k_uptime_get_32() - poll_start;
@@ -108,27 +111,38 @@ static void mqtt_handle() {
     LOG_DBG("Total mqtt_handle() took: %d ms", total_time);
 }
 
-void shell() {
-    k_sleep(K_SECONDS(1));
-    shell_mqtt_init();
-    LOG_INF("Shell Initialized");
-	LOG_INF("Tracker Demo Version %d.%d.%d started\n",CONFIG_TRACKER_VERSION_MAJOR,CONFIG_TRACKER_VERSION_MINOR,CONFIG_TRACKER_VERSION_PATCH);
-	LOG_INF("Device ID: %s", mqtt_client_id);
-    LOG_INF("MQTT Broker Host: %s", mqtt_broker_host);
-    LOG_INF("MQTT Broker Port: %d", mqtt_broker_port);
-    LOG_INF("MQTT Publish Interval (sec): %d", mqtt_publish_interval);
-    LOG_INF("MQTT Connection Keep Alive (sec): %d", mqtt_keepalive);
-}
 
+
+#define FOTA_CHECK_INTERVAL_MS (1 * 60 * 1000) 
 void mqtt_thread_fn(void *arg1, void *arg2, void *arg3) {
+    int64_t last_fota_check = k_uptime_get();
+
     while (1) {
-        int start = k_uptime_get();
-        mqtt_handle();  // this will publish and manage the connection
-        k_msleep(39);
-        int end = k_uptime_get();
-        LOG_INF("MQTT Thread Took: %d", end - start);
+        int64_t start = k_uptime_get();
+
+        if ((start - last_fota_check) >= FOTA_CHECK_INTERVAL_MS) {
+            LOG_INF("Suspending MQTT publish to check FOTA...");
+
+
+            if (fota_get_state() == FOTA_CONNECTED) {
+                check_fota_server();  
+            }
+            else {
+                LOG_INF("LTE not connected, skipping FOTA check.");
+            }
+            last_fota_check = start;
+
+
+        }
+
+        mqtt_handle();  
+        
+
+        int64_t end = k_uptime_get();
+        LOG_INF("MQTT Thread Took: %d ms", (int)(end - start));
     }
 }
+
 
 void mqtt_init() {
     int err;
@@ -136,12 +150,15 @@ void mqtt_init() {
     LOG_INF("Connecting to MQTT broker");
     
     
-    
+    set_user_pass();
+    k_sleep(K_SECONDS(1));
     err = client_init(&client);
     if (err) {
         LOG_ERR("client_init: %d", err);
     }
-    
+    k_sleep(K_SECONDS(1));
+    //clear_user_pass();
+
     err = mqtt_connect(&client);
     if (err) {
         LOG_ERR("mqtt_connect: %d", err);
@@ -161,12 +178,15 @@ void mqtt_init() {
     }
 }
 
-
-
 static int init() {
+    
     int err;
     k_thread_priority_set(k_current_get(), 13);
-	shell();
+    err = open_persistent_key();
+    if (err) {
+        LOG_ERR("open_persistent_key: %d", err);
+    }
+    k_sleep(K_MSEC(100)); 
     gnss_int();
 	err = dk_leds_init();
 	if (err){
@@ -189,6 +209,11 @@ static int init() {
 }
 
 int main(void) {
+    if (boot_write_img_confirmed() != 0) {
+        printk("Failed to confirm firmware!\n");
+    } else {
+        printk("Firmware confirmed!\n");
+    }
 	int err;
     err = init();
     if (err) {
@@ -208,7 +233,7 @@ int main(void) {
            update_lte_info = false;
            publish_lte_info = true;
         }
-        k_msleep(15);
+        k_msleep(interval_main);
         int end = k_uptime_get();
         LOG_INF("Main Loop Took: %d", end-start);
 
