@@ -2,11 +2,12 @@
 #include "mqtt_connection.h"
 #include "heartbeat.h"
 #include "shell_commands.h"
-
+#include "fota.h"
 LOG_MODULE_REGISTER(lte, LOG_LEVEL_INF);
 bool update_lte_info = false;
 char json_payload_lte[512] = "NO LTE";
 bool publish_lte_info = false;
+
 
 K_SEM_DEFINE(lte_connected, 0, 1);
 const char *lookup_operator_name(const char *mccmnc)
@@ -87,6 +88,15 @@ void lte_handler(const struct lte_lc_evt *const evt) {
                     "Connected - home network" :
                     "Connected - roaming");
                 k_sem_give(&lte_connected);
+                if (current_state == FOTA_IDLE) {
+                    set_state(FOTA_CONNECTED, 0);
+                }
+            }
+            else {
+                if (current_state == FOTA_CONNECTED) {
+                    LOG_INF("DISCONNECTED FROM LTE NETWORK WHILE IN FOTA_CONNECTED STATE");
+                    set_state(FOTA_IDLE, 0);
+                }
             }
             break;
         case LTE_LC_EVT_RRC_UPDATE:
@@ -132,7 +142,11 @@ int modem_configure(void)
 		LOG_ERR("Failed to initialize the modem library, error: %d", err);
 		return err;
 	}
-
+    fota_init(set_state);
+    if (err) {
+        printk("FOTA init failed: %d\n", err);
+        return err;
+    }
     provision_all_tls_credentials();
     lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_LTEM, 
                            LTE_LC_SYSTEM_MODE_PREFER_AUTO);

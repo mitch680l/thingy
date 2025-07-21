@@ -15,9 +15,9 @@
 #include <modem/modem_key_mgmt.h>
 
 /* Buffers for MQTT client. */
-static uint8_t rx_buffer[CONFIG_MQTT_MESSAGE_BUFFER_SIZE];
-static uint8_t tx_buffer[CONFIG_MQTT_MESSAGE_BUFFER_SIZE];
-static uint8_t payload_buf[CONFIG_MQTT_PAYLOAD_BUFFER_SIZE];
+static uint8_t rx_buffer[256];
+static uint8_t tx_buffer[516];
+static uint8_t payload_buf[256];
 
 /* MQTT Broker details. */
 #define TLS_SEC_TAG 42
@@ -25,33 +25,50 @@ static struct sockaddr_storage broker;
 LOG_MODULE_REGISTER(mqtt_conn, LOG_LEVEL_INF);
 
 
+struct mqtt_utf8 struct_pass;
+struct mqtt_utf8 struct_user;
 
+void set_user_pass() {
+    char password[20] = {0};
+    size_t password_len = sizeof(password);
+    get_password(password, &password_len);
+    
+    char username[20] = {0};
+    size_t username_len = sizeof(username);
+    get_mqtt_username(username, &username_len);
+    
+    LOG_INF("Setting MQTT username: %s", username);
+    LOG_INF("Setting MQTT password: %s", password);
+    
+    // Allocate persistent storage for the credentials
+    static char persistent_password[20];
+    static char persistent_username[20];
+    
+    // Copy the decrypted data to persistent storage
+    strncpy(persistent_password, password, sizeof(persistent_password) - 1);
+    persistent_password[sizeof(persistent_password) - 1] = '\0';
+    
+    strncpy(persistent_username, username, sizeof(persistent_username) - 1);
+    persistent_username[sizeof(persistent_username) - 1] = '\0';
+    
+    // Set up the structs to point to persistent storage
+    struct_pass.utf8 = (uint8_t *)persistent_password;
+    struct_pass.size = strlen(persistent_password);
+    struct_user.utf8 = (uint8_t *)persistent_username;
+    struct_user.size = strlen(persistent_username);
+    
+    // Now it's safe to zero out the temporary buffers
+    secure_memzero(password, sizeof(password));
+    secure_memzero(username, sizeof(username));
+}
 
-const uint8_t public_cert[] = {
-	
-
-};
-const uint32_t public_cert_len = sizeof(public_cert);
-
-struct mqtt_utf8 password = {
-	.utf8 = "Kalscott123",
-	.size = strlen("Kalscott123")
-};
-	
-struct mqtt_utf8 username = {
-	.utf8 = "admin",
-	.size = strlen("admin")
-};
-
-const uint8_t ca_cert[] = {	
-
-};
-const uint32_t ca_cert_len = sizeof(ca_cert);
-
-const uint8_t private_key[] = {
-	
-};
-const uint32_t private_key_len = sizeof(private_key);
+void clear_user_pass() {
+	struct_pass.utf8 = NULL;
+	struct_pass.size = 0;
+	struct_user.utf8 = NULL;
+	struct_user.size = 0;
+	LOG_INF("Cleared MQTT username and password");
+}
 
 void provision_all_tls_credentials(void)
 {
@@ -70,32 +87,16 @@ void provision_all_tls_credentials(void)
 
  
 	if (ca_cert_exists) {
-		LOG_INF("CA cert already exists, not writing again");
+		LOG_INF("CA cert  exists");
 	}
 	if (public_cert_exists) {
-		LOG_INF("Client cert already exists, not writing again");
+		LOG_INF("Client cert exists");
 	}
 	if (private_key_exists) {
-		LOG_INF("Private key already exists, not writing again"); 
+		LOG_INF("Private key  exists"); 
 	}
-	if (!ca_cert_exists) {
-
-    	err = modem_key_mgmt_write(TLS_SEC_TAG,
-        MODEM_KEY_MGMT_CRED_TYPE_CA_CHAIN,
-        ca_cert, ca_cert_len);
-    	LOG_INF("CA cert: %d", err);
-	}
-	if (!public_cert_exists) {
-    	err = modem_key_mgmt_write(TLS_SEC_TAG,
-        MODEM_KEY_MGMT_CRED_TYPE_PUBLIC_CERT,
-        public_cert, public_cert_len);
-    	LOG_INF("Client cert: %d", err);
-	}
-	if (!private_key_exists) {
-   		err = modem_key_mgmt_write(TLS_SEC_TAG,
-        MODEM_KEY_MGMT_CRED_TYPE_PRIVATE_CERT,
-        private_key, private_key_len);
-    	LOG_INF("Private key: %d", err);
+	if (!ca_cert_exists || !public_cert_exists || !private_key_exists) {
+		LOG_INF("YOU NEED TO PROVISION AWS TLS CREDENTIALS");
 	}
 
 }
@@ -145,28 +146,7 @@ static uint16_t mqtt_next_packet_id(void)
     return packet_id;
 }
 
-/* Subscribe to the configured topic */
-static int subscribe(struct mqtt_client *const c)
-{
-    /* Build a single topic+QoS pair */
-    struct mqtt_topic subscribe_topic = {
-        .topic = {
-            .utf8 = (uint8_t *)mqtt_subscribe_topic,
-            .size = strlen(mqtt_subscribe_topic),
-        },
-        .qos = MQTT_QOS_1_AT_LEAST_ONCE,
-    };
 
-    const struct mqtt_subscription_list subscription_list = {
-        .list       = &subscribe_topic,
-        .list_count = 1,
-        .message_id = mqtt_next_packet_id(),
-    };
-
-    LOG_INF("Subscribing to: %s", mqtt_subscribe_topic);
-
-    return mqtt_subscribe(c, &subscription_list);
-}
 
 
 /* Print strings without null-termination */
@@ -319,11 +299,15 @@ static int broker_init(void)
 		.ai_socktype = SOCK_STREAM
 	};
 
+	char mqtt_broker_host[MQTT_MAX_STR_LEN];
+	get_http_host(mqtt_broker_host, sizeof(mqtt_broker_host));
+
 	err = getaddrinfo(mqtt_broker_host, NULL, &hints, &result);
 	if (err) {
 		LOG_ERR("getaddrinfo failed: %d", err);
 		return -ECHILD;
 	}
+	secure_memzero(mqtt_broker_host, sizeof(mqtt_broker_host));
 
 	addr = result;
 
@@ -418,8 +402,8 @@ int client_init(struct mqtt_client *client)
 	client->evt_cb = mqtt_evt_handler;
 	client->client_id.utf8 = client_id_get();
 	client->client_id.size = strlen(client->client_id.utf8);
-	client->password = &password;
-	client->user_name = &username;
+	client->password = &struct_pass;
+	client->user_name = &struct_user;
 	client->protocol_version = MQTT_VERSION_3_1_1;
 
 	/* MQTT buffers configuration */
@@ -429,7 +413,7 @@ int client_init(struct mqtt_client *client)
 	client->tx_buf_size = sizeof(tx_buffer);
 
 	/* Non-Secure MQTT , not using TLS  */
-	LOG_INF("BROKER: %s", mqtt_broker_host);
+	
 	struct mqtt_sec_config *tls_cfg = &(client->transport).tls.config;
 	static sec_tag_t sec_tag_list[] = { TLS_SEC_TAG };  LOG_INF("TLS enabled");
 	client->transport.type = MQTT_TRANSPORT_SECURE;  
@@ -456,4 +440,3 @@ int fds_init(struct mqtt_client *c, struct pollfd *fds)
 
 	return 0;
 }
-

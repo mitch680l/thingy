@@ -20,5 +20,8 @@ int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 
 void provision_cert(void);
 
+void set_user_pass();
+void clear_user_pass();
+
 void provision_all_tls_credentials(void);
 #endif /* _CONNECTION_H_ */

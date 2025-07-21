@@ -44,7 +44,6 @@ extern bool publish_lte_info;
 extern char json_payload_lte[512];
 
 
-
 void lte_handler(const struct lte_lc_evt *const evt);
 void pack_lte_data(void);
 const char *lookup_operator_name(const char *mccmnc);

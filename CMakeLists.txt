@@ -11,4 +11,5 @@ target_sources(app PRIVATE src/shell_commands.c)
 target_sources(app PRIVATE src/main.c)
 target_sources(app PRIVATE src/gnss.c)
 target_sources(app PRIVATE src/lte_helper.c)
+target_sources(app PRIVATE src/fota.c)
 # NORDIC SDK APP END
