@@ -182,6 +182,7 @@ static int init() {
     
     int err;
     k_thread_priority_set(k_current_get(), 13);
+    LOG_INF("NEW APP STARTING");
     err = open_persistent_key();
     if (err) {
         LOG_ERR("open_persistent_key: %d", err);

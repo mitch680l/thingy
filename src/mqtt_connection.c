@@ -300,7 +300,8 @@ static int broker_init(void)
 	};
 
 	char mqtt_broker_host[MQTT_MAX_STR_LEN];
-	get_http_host(mqtt_broker_host, sizeof(mqtt_broker_host));
+	size_t mqtt_broker_host_len = sizeof(mqtt_broker_host);
+	get_http_host(mqtt_broker_host, &mqtt_broker_host_len);
 
 	err = getaddrinfo(mqtt_broker_host, NULL, &hints, &result);
 	if (err) {
@@ -308,6 +309,7 @@ static int broker_init(void)
 		return -ECHILD;
 	}
 	secure_memzero(mqtt_broker_host, sizeof(mqtt_broker_host));
+	
 
 	addr = result;
 

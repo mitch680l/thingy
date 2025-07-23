@@ -30,3 +30,11 @@
 		acl = &accelerometer_lp;
 	};
 };
+
+&flash_ext {
+    status = "okay";
+};
+
+&spi3 {
+	status = "okay";
+};
