@@ -81,18 +81,20 @@ void lte_handler(const struct lte_lc_evt *const evt) {
     switch (evt->type) {
         case LTE_LC_EVT_NW_REG_STATUS:
             /* Only proceed once registered (home or roaming) */
-            if ((evt->nw_reg_status == LTE_LC_NW_REG_REGISTERED_HOME) ||
-                (evt->nw_reg_status == LTE_LC_NW_REG_REGISTERED_ROAMING)) {
+            if ((evt->nw_reg_status == LTE_LC_NW_REG_REGISTERED_HOME) || (evt->nw_reg_status == LTE_LC_NW_REG_REGISTERED_ROAMING)) 
+            {
                 LOG_INF("Network registration status: %s",
                     evt->nw_reg_status == LTE_LC_NW_REG_REGISTERED_HOME ?
                     "Connected - home network" :
                     "Connected - roaming");
                 k_sem_give(&lte_connected);
+                
                 if (current_state == FOTA_IDLE) {
                     set_state(FOTA_CONNECTED, 0);
                 }
             }
-            else {
+            else 
+            {
                 if (current_state == FOTA_CONNECTED) {
                     LOG_INF("DISCONNECTED FROM LTE NETWORK WHILE IN FOTA_CONNECTED STATE");
                     set_state(FOTA_IDLE, 0);
@@ -100,9 +102,18 @@ void lte_handler(const struct lte_lc_evt *const evt) {
             }
             break;
         case LTE_LC_EVT_RRC_UPDATE:
-            LOG_INF("RRC mode: %s",
-                evt->rrc_mode == LTE_LC_RRC_MODE_CONNECTED ?
-                "Connected" : "Idle");
+            LOG_INF("RRC mode: %s", evt->rrc_mode == LTE_LC_RRC_MODE_CONNECTED ? "Connected" : "Idle");
+            if (evt->rrc_mode == LTE_LC_RRC_MODE_CONNECTED) {
+                if (current_state == FOTA_IDLE) {
+                    set_state(FOTA_CONNECTED, 0);
+                }
+                heartbeat_config(HB_COLOR_GREEN, 1, 500);
+            } 
+            else {
+                if (current_state == FOTA_DOWNLOADING) {
+                    set_state(FOTA_IDLE, 0);
+                }
+                heartbeat_config(HB_COLOR_WHITE, 1, 500);
             break;
 
         case LTE_LC_EVT_CELL_UPDATE:
@@ -122,6 +133,10 @@ void lte_handler(const struct lte_lc_evt *const evt) {
                     break;
                 case LTE_LC_LTE_MODE_NONE:
                     LOG_INF("LTE mode updated: None (off)");
+                    if (current_state == FOTA_CONNECTED || current_state == FOTA_DOWNLOADING) {
+                        set_state(FOTA_IDLE, 0);
+                    }
+                    heartbeat_config(HB_COLOR_RED, 1, 500);
                     break;
                 default:
                     LOG_INF("LTE mode updated: Unknown");
@@ -132,6 +147,7 @@ void lte_handler(const struct lte_lc_evt *const evt) {
         default:
             break;
     }
+}
 }
 
 int modem_configure(void)

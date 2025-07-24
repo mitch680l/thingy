@@ -14,9 +14,14 @@
 #include <string.h>
 #include <tfm_ns_interface.h>
 
-
+#define GPS_TARGET_RATE_HZ 25 
+#define GPS_READ_BUFFER_SIZE 126  
+#define GPS_STARTUP_DELAY_MS 2000  
+#define GPS_CONFIG_TIMEOUT_MS 500  
+#define GPS_MAX_CONFIG_ATTEMPTS 3
+#define FOTA_CHECK_INTERVAL_MS (10 * 60 * 1000) 
 #define MQTT_MAX_STR_LEN 128
-#define FOTA_CHECK_INTERVAL_MINUTES 5
+
 
 extern char mqtt_client_id[MQTT_MAX_STR_LEN];               
 extern int  mqtt_broker_port;
