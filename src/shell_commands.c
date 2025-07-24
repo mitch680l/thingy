@@ -3,9 +3,9 @@
 char mqtt_client_id[MQTT_MAX_STR_LEN] = "nrid4148";               
 char firmware_filename[MQTT_MAX_STR_LEN] = "blinky_2.signed.bin";
 int  mqtt_broker_port = 8883;
-int interval_mqtt = 1000;
-int interval_gnss = 1000;
-int interval_main = 1000;
+int interval_mqtt = 40;
+int interval_gnss = 40;
+int interval_main = 40;
 psa_key_id_t my_key_id = 0x00000005;
 psa_key_handle_t my_key_handle;
 /* call this before you read them */

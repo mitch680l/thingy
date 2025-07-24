@@ -23,7 +23,7 @@ static uint8_t payload_buf[256];
 #define TLS_SEC_TAG 42
 static struct sockaddr_storage broker;
 LOG_MODULE_REGISTER(mqtt_conn, LOG_LEVEL_INF);
-
+bool mqtt_connected = false;
 
 struct mqtt_utf8 struct_pass;
 struct mqtt_utf8 struct_user;
@@ -200,15 +200,18 @@ void mqtt_evt_handler(struct mqtt_client *const c,
 	/* Subscribe to the topic mqtt_subscribe_topic when we have a successful connection */
 		if (evt->result != 0) {
 			LOG_ERR("MQTT connect failed: %d", evt->result);
+			mqtt_connected = false;
 			break;
 		}
 
 		LOG_INF("MQTT client connected");
+		mqtt_connected = true;
 		//  subscribe(c);
 		break;
 
 	case MQTT_EVT_DISCONNECT:
 		LOG_INF("MQTT client disconnected: %d", evt->result);
+		mqtt_connected = false;
 		break;
 
 	case MQTT_EVT_PUBLISH:
@@ -250,7 +253,7 @@ void mqtt_evt_handler(struct mqtt_client *const c,
 		} else {
 			LOG_ERR("get_received_payload failed: %d", err);
 			LOG_INF("Disconnecting MQTT client...");
-
+			
 			err = mqtt_disconnect(c, NULL);
 			if (err) {
 				LOG_ERR("Could not disconnect: %d", err);

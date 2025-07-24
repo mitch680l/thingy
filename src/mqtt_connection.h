@@ -4,6 +4,9 @@
 #define IMEI_LEN 15
 #define CGSN_RESPONSE_LENGTH (IMEI_LEN + 6 + 1) /* Add 6 for \r\nOK\r\n and 1 for \0 */
 #define CLIENT_ID_LEN sizeof("nrf-") + IMEI_LEN
+#include <stdbool.h>
+
+extern bool mqtt_connected;
 
 /**@brief Initialize the MQTT client structure
  */

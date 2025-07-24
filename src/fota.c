@@ -23,6 +23,7 @@ struct k_work fota_work;
 char fota_host[MQTT_MAX_STR_LEN];
 size_t fota_host_len = sizeof(fota_host);
 
+LOG_MODULE_REGISTER(fota, LOG_LEVEL_INF);
 
 void set_state(enum fota_state new_state, int error)
 {
@@ -32,7 +33,7 @@ void set_state(enum fota_state new_state, int error)
 
     current_state = new_state;
     
-    printk("FOTA state changed to %d (error: %d)\n", new_state, error);
+    LOG_INF("FOTA state changed to %d (error: %d)\n", new_state, error);
 
     if (state_callback) {
         state_callback(new_state, error);
@@ -45,17 +46,17 @@ void fota_dl_handler(const struct fota_download_evt *evt)
 {
     switch (evt->id) {
     case FOTA_DOWNLOAD_EVT_ERROR:
-        printk("FOTA download error\n");
+        LOG_INF("FOTA download error\n");
         set_state(FOTA_CONNECTED, -EIO);
         break;
     case FOTA_DOWNLOAD_EVT_FINISHED:
-        printk("FOTA download finished\n");
+        LOG_INF("FOTA download finished\n");
         secure_memzero(fota_host, sizeof(fota_host));
         set_state(FOTA_READY_TO_APPLY, 0);
         fota_apply_update();
         break;
     case FOTA_DOWNLOAD_EVT_PROGRESS:
-        printk("FOTA download progress: %d%%\n", evt->progress);
+        LOG_INF("FOTA download progress: %d%%\n", evt->progress);
         break;
     default:
         break;
@@ -70,7 +71,7 @@ int download_firmware(void)
 
     err = fota_download_init(fota_dl_handler);
     if (err) {
-        printk("fota_download_init() failed, err %d\n", err);
+        LOG_INF("fota_download_init() failed, err %d\n", err);
         return err;
     }
 
@@ -78,11 +79,11 @@ int download_firmware(void)
 
     
     get_http_host(fota_host, &fota_host_len);
-    printk("Starting firmware download from %s%s\n", fota_host, firmware_filename);
+    LOG_INF("Starting firmware download from %s%s\n", fota_host, firmware_filename);
 
     err = fota_download_start(fota_host, firmware_filename, SEC_TAG, 0, 0);
     if (err) {
-        printk("fota_download_start() failed, err %d\n", err);
+        LOG_INF("fota_download_start() failed, err %d\n", err);
         // Clean up before returning
         secure_memzero(fota_host, sizeof(fota_host));
         return err;
@@ -105,7 +106,7 @@ void fota_work_cb(struct k_work *work)
         }
         break;
     case FOTA_APPLYING:
-        printk("Applying firmware update - rebooting...\n");
+        LOG_INF("Applying firmware update - rebooting...\n");
         lte_lc_power_off();
         sys_reboot(SYS_REBOOT_WARM);
         break;
@@ -138,20 +139,20 @@ int check_fota_server(void)
         
     case FOTA_CONNECTED:
         set_state(FOTA_DOWNLOADING, 0);
-        printk("Checking for FOTA updates...\n");
+        LOG_INF("Checking for FOTA updates...\n");
         k_work_submit(&fota_work);
         break;
         
     case FOTA_DOWNLOADING:
-        printk("FOTA download already in progress\n");
+        LOG_INF("FOTA download already in progress\n");
         return -EBUSY;
         
     case FOTA_READY_TO_APPLY:
-        printk("FOTA update ready - call fota_apply_update()\n");
+        LOG_INF("FOTA update ready - call fota_apply_update()\n");
         return 0;
         
     case FOTA_APPLYING:
-        printk("FOTA update being applied\n");
+        LOG_INF("FOTA update being applied\n");
         return -EBUSY;
         
     default:

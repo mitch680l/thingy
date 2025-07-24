@@ -31,7 +31,6 @@
 /* MQTT structures */
 static struct mqtt_client client;
 static struct pollfd fds;
-static int bad_publish = 0;
 /* Semaphores */
 K_MUTEX_DEFINE(json_mutex);
 K_THREAD_STACK_DEFINE(mqtt_thread_stack, MQTT_THREAD_STACK_SIZE);
@@ -40,7 +39,7 @@ static struct k_thread mqtt_thread_data;
 LOG_MODULE_REGISTER(loop, LOG_LEVEL_INF);
 
 int publish_all() {
-    int err = 0;
+    static int err = 0;
     static char topic[200];
     static char last_payload[sizeof(json_payload)] = {0};
 
@@ -48,6 +47,17 @@ int publish_all() {
 
     if (strcmp(json_payload, last_payload) == 0) {
         LOG_WRN("No new GNSS fix since last publish!");
+        enum lte_lc_nw_reg_status status;
+        lte_lc_nw_reg_status_get(&status);
+
+        if (status != LTE_LC_NW_REG_REGISTERED_HOME || !mqtt_connected) {
+            LOG_WRN("Not connected to LTE, or MQTT");
+            k_sleep(K_SECONDS(5));
+            return -ENOTCONN;
+        }
+        else {
+            err = 0;
+        }
     } 
     else {
         snprintf(topic, sizeof(topic), "%s%s", mqtt_client_id, "/gnss_json");
@@ -69,6 +79,7 @@ int publish_all() {
 }
 
 static void mqtt_handle() {
+    static int bad_publish = 0;
     int err;
     int start_time = k_uptime_get_32();
     k_sleep(K_MSEC(interval_mqtt));
@@ -98,10 +109,12 @@ static void mqtt_handle() {
     int error_handling_start = k_uptime_get_32();
     if (err) {
         LOG_ERR("data_publish: %d", err);
+        LOG_WRN("Bad publish count: %d", bad_publish);
         bad_publish++;
         if(bad_publish >= BAD_PUBLISH_LIMIT)
             sys_reboot(SYS_REBOOT_COLD);
-    } else {
+    } 
+    else {
         bad_publish = 0;
     }
     int error_handling_time = k_uptime_get_32() - error_handling_start;
@@ -113,7 +126,7 @@ static void mqtt_handle() {
 
 
 
-#define FOTA_CHECK_INTERVAL_MS (1 * 60 * 1000) 
+
 void mqtt_thread_fn(void *arg1, void *arg2, void *arg3) {
     int64_t last_fota_check = k_uptime_get();
 
@@ -148,7 +161,6 @@ void mqtt_init() {
     int err;
     
     LOG_INF("Connecting to MQTT broker");
-    
     
     set_user_pass();
     k_sleep(K_SECONDS(1));
@@ -205,7 +217,7 @@ static int init() {
     LOG_INF("Modem initialized");
     k_sleep(K_SECONDS(5));
     mqtt_init();
-    heartbeat_config(HB_COLOR_BLUE, 1, 500);
+    
     return 0;
 }
 
@@ -226,7 +238,8 @@ int main(void) {
     while (1) {
         int start = k_uptime_get();
         gnss_main_loop();
-        
+        int gnss_time = k_uptime_get();
+        LOG_INF("GNSS Main Loop Took: %d", gnss_time - start);
         if (update_lte_info) {
            k_mutex_lock(&json_mutex, K_FOREVER);
            pack_lte_data();
@@ -234,7 +247,6 @@ int main(void) {
            update_lte_info = false;
            publish_lte_info = true;
         }
-        k_msleep(interval_main);
         int end = k_uptime_get();
         LOG_INF("Main Loop Took: %d", end-start);
 
