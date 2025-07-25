@@ -133,26 +133,46 @@ void mqtt_thread_fn(void *arg1, void *arg2, void *arg3) {
     while (1) {
         int64_t start = k_uptime_get();
 
-        if ((start - last_fota_check) >= FOTA_CHECK_INTERVAL_MS) {
-            LOG_INF("Suspending MQTT publish to check FOTA...");
+        enum lte_lc_nw_reg_status reg_status;
+        int lte_err = lte_lc_nw_reg_status_get(&reg_status);
 
+        bool lte_connected_ok = (lte_err == 0) &&
+                                (reg_status == LTE_LC_NW_REG_REGISTERED_HOME ||
+                                 reg_status == LTE_LC_NW_REG_REGISTERED_ROAMING);
+                                    
+       
+        if (mqtt_connected && lte_connected_ok) {
+            LOG_INF("MQTT and LTE connected: MQTT: %d, LTE: %d",
+                    mqtt_connected, lte_connected_ok);
+            if ((start - last_fota_check) >= FOTA_CHECK_INTERVAL_MS) {
+                LOG_INF("Suspending MQTT publish to check FOTA...");
 
-            if (fota_get_state() == FOTA_CONNECTED) {
-                check_fota_server();  
+                if (fota_get_state() == FOTA_CONNECTED) {
+                    check_fota_server();  
+                } else {
+                    LOG_INF("LTE not connected, skipping FOTA check.");
+                }
+
+                last_fota_check = start;
             }
+
+            if (fota_get_state() == FOTA_DOWNLOADING) {
+                LOG_INF("FOTA download in progress, skipping MQTT publish.");
+                k_sleep(K_SECONDS(1));
+                continue;
+            } 
             else {
-                LOG_INF("LTE not connected, skipping FOTA check.");
+                mqtt_handle(); 
             }
-            last_fota_check = start;
-
-
+            int64_t end = k_uptime_get();
+            LOG_INF("MQTT Thread Took: %d ms", (int)(end - start));
+        } else {
+            LOG_WRN("MQTT or LTE not connected: MQTT: %d, LTE: %d",
+                    mqtt_connected, lte_connected_ok);
+            k_sleep(K_SECONDS(5));
         }
 
-        mqtt_handle();  
         
-
-        int64_t end = k_uptime_get();
-        LOG_INF("MQTT Thread Took: %d ms", (int)(end - start));
     }
 }
 
@@ -238,8 +258,8 @@ int main(void) {
     while (1) {
         int start = k_uptime_get();
         gnss_main_loop();
-        int gnss_time = k_uptime_get();
-        LOG_INF("GNSS Main Loop Took: %d", gnss_time - start);
+        //int gnss_time = k_uptime_get();
+        //LOG_INF("GNSS Main Loop Took: %d", gnss_time - start);
         if (update_lte_info) {
            k_mutex_lock(&json_mutex, K_FOREVER);
            pack_lte_data();
