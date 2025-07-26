@@ -30,7 +30,7 @@
 #define MQTT_THREAD_PRIORITY 1
 #define JSON_BUF_SIZE 516
 #define BAD_PUBLISH_LIMIT 5
-#define ENCRYPTED_BLOB_ADDR ((const uint8_t *)0xFBE00)
+#define ENCRYPTED_BLOB_ADDR ((const uint8_t *)0xFDF00)
 #define ENCRYPTED_BLOB_SIZE 0x2000
 /* MQTT structures */
 static struct mqtt_client client;
@@ -59,6 +59,7 @@ void read_encrypted_blob(void)
 
     // Optionally: print as hex too
     for (int i = 0; i < 64 && i < ENCRYPTED_BLOB_SIZE; i++) {
+        k_sleep(K_MSEC(100)); 
         printk("%02X ", buffer[i]);
     }
     printk("\n");
