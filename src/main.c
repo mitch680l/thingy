@@ -21,7 +21,6 @@
 #include "lte_helper.h"
 #include "shell_commands.h"
 #include "fota.h"
-#include <zephyr.h>
 #include <string.h>
 #include <stdio.h>
 
