@@ -36,5 +36,6 @@
         "reboot.h": "c",
         "stdlib.h": "c"
     },
-    "C_Cpp.errorSquiggles": "disabled"
+    "C_Cpp.errorSquiggles": "disabled",
+    "nrf-connect.applications": []
 }

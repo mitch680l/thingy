@@ -37,8 +37,8 @@ LOG_MODULE_REGISTER(aes_gcm, LOG_LEVEL_DBG);
 #define MAX_AAD_LEN         64
 #define MAX_CIPHERTEXT_LEN  256
 
-#define ENCRYPTED_BLOB_ADDR ((const uint8_t *)0xFDF00)
-#define ENCRYPTED_BLOB_SIZE 2048
+#define ENCRYPTED_BLOB_ADDR ((const uint8_t *)0xfb400)
+#define ENCRYPTED_BLOB_SIZE 4000
 
 typedef struct {
     uint8_t iv[MAX_IV_LEN];
@@ -59,17 +59,15 @@ void parse_encrypted_blob(void)
 
     LOG_INF("🔍 Begin blob parsing at address %p, total size: %d", ptr, ENCRYPTED_BLOB_SIZE);
 
-    // 1. Magic header check
     if (memcmp(ptr, (uint8_t[]){0xAB, 0xCD, 0xEF, 0x12}, 4) != 0) {
-        LOG_ERR(" Invalid blob magic header");
+        LOG_ERR("❌ Invalid blob magic header");
         return;
     }
 
     ptr += 4;
 
-    // 2. Entry count
     if (ptr + 2 > end) {
-        LOG_ERR(" Not enough space for entry count field");
+        LOG_ERR("❌ Not enough space for entry count");
         return;
     }
 
@@ -80,56 +78,43 @@ void parse_encrypted_blob(void)
 
     for (int i = 0; i < entry_count && num_entries < MAX_ENTRIES; i++) {
         ConfigEntry *e = &entries[num_entries];
-        LOG_INF("➡️  Entry %d at offset %d", i, (int)(ptr - ENCRYPTED_BLOB_ADDR));
+        int entry_offset = (int)(ptr - ENCRYPTED_BLOB_ADDR);
+        LOG_INF("➡️  Entry %d at offset %d", i, entry_offset);
 
-        // IV length
         if (ptr + 1 > end) {
-            LOG_ERR(" Not enough space to read IV length");
+            LOG_ERR("❌ Not enough space to read IV length");
             break;
         }
         e->iv_len = *ptr++;
-        if (e->iv_len > MAX_IV_LEN) {
-            LOG_ERR(" IV length too large: %d", e->iv_len);
-            break;
-        }
-        if (ptr + e->iv_len > end) {
-            LOG_ERR("Not enough space to read IV");
+        if (e->iv_len > MAX_IV_LEN || ptr + e->iv_len > end) {
+            LOG_ERR("❌ Invalid or oversized IV length: %d at offset %d", e->iv_len, entry_offset);
+            LOG_HEXDUMP_INF(ptr - 4, 16, "🔍 Dump near IV failure");
             break;
         }
         memcpy(e->iv, ptr, e->iv_len);
         ptr += e->iv_len;
 
-        // AAD length (2 bytes)
         if (ptr + 2 > end) {
-            LOG_ERR("Not enough space to read AAD length");
+            LOG_ERR("❌ Not enough space to read AAD length");
             break;
         }
         e->aad_len = ptr[0] | (ptr[1] << 8);
         ptr += 2;
-        if (e->aad_len > MAX_AAD_LEN) {
-            LOG_ERR("AAD length too large: %d", e->aad_len);
-            break;
-        }
-        if (ptr + e->aad_len > end) {
-            LOG_ERR("Not enough space to read AAD");
+        if (e->aad_len > MAX_AAD_LEN || ptr + e->aad_len > end) {
+            LOG_ERR("❌ Invalid or oversized AAD length: %d", e->aad_len);
             break;
         }
         memcpy(e->aad, ptr, e->aad_len);
         ptr += e->aad_len;
 
-        // Ciphertext + tag length (2 bytes)
         if (ptr + 2 > end) {
-            LOG_ERR("Not enough space to read ciphertext+tag length");
+            LOG_ERR("❌ Not enough space to read ciphertext+tag length");
             break;
         }
         e->ciphertext_len = ptr[0] | (ptr[1] << 8);
         ptr += 2;
-        if (e->ciphertext_len > MAX_CIPHERTEXT_LEN) {
-            LOG_ERR("Ciphertext length too large: %d", e->ciphertext_len);
-            break;
-        }
-        if (ptr + e->ciphertext_len > end) {
-            LOG_ERR("Not enough space to read ciphertext+tag");
+        if (e->ciphertext_len > MAX_CIPHERTEXT_LEN || ptr + e->ciphertext_len > end) {
+            LOG_ERR("❌ Invalid or oversized ciphertext length: %d", e->ciphertext_len);
             break;
         }
         memcpy(e->ciphertext, ptr, e->ciphertext_len);
