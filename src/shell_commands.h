@@ -33,7 +33,7 @@ extern char firmware_filename[MQTT_MAX_STR_LEN];
 void secure_memzero(void *v, size_t n);
 
 int open_persistent_key();
-
+void parse_encrypted_blob(void);
 int decrypt_config_field_data(const char *encrypted_data, size_t encrypted_len,
                               const char *iv,
                               const char *additional_data, size_t additional_len,

@@ -42,28 +42,7 @@ static struct k_thread mqtt_thread_data;
 /*Logging*/
 LOG_MODULE_REGISTER(loop, LOG_LEVEL_INF);
 
-/*
-Test Function for reading Hex Blobs
-*/
-void read_encrypted_blob(void)
-{
-    // Read blob into a buffer
-    char buffer[ENCRYPTED_BLOB_SIZE + 1]; // +1 for null-termination safety
-    memcpy(buffer, ENCRYPTED_BLOB_ADDR, ENCRYPTED_BLOB_SIZE);
 
-    // Ensure it's null-terminated
-    buffer[ENCRYPTED_BLOB_SIZE] = '\0';
-
-    // If the blob is a string, print it
-    printk("Blob content:\n%s\n", buffer);
-
-    // Optionally: print as hex too
-    for (int i = 0; i < 64 && i < ENCRYPTED_BLOB_SIZE; i++) {
-        k_sleep(K_MSEC(100)); 
-        printk("%02X ", buffer[i]);
-    }
-    printk("\n");
-}
 
 int publish_all() {
     static int err = 0;
@@ -253,7 +232,7 @@ static int init() {
 		LOG_ERR("Failed to initialize the LEDs Library");
         return err;
 	}
-    read_encrypted_blob();
+    parse_encrypted_blob();
     heartbeat_config(HB_COLOR_RED, 1, 500);
     LOG_INF("Initializing modem");
 	err = modem_configure();

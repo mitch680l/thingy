@@ -30,6 +30,82 @@ psa_key_handle_t my_key_handle;
 LOG_MODULE_REGISTER(aes_gcm, LOG_LEVEL_DBG);
 
 
+
+
+#define MAX_ENTRIES         16
+#define MAX_IV_LEN          16
+#define MAX_AAD_LEN         64
+#define MAX_CIPHERTEXT_LEN  256
+
+extern const uint8_t ENCRYPTED_BLOB_ADDR[];
+#define ENCRYPTED_BLOB_SIZE 2048
+
+typedef struct {
+    uint8_t iv[MAX_IV_LEN];
+    uint8_t iv_len;
+    uint8_t aad[MAX_AAD_LEN];
+    uint16_t aad_len;
+    uint8_t ciphertext[MAX_CIPHERTEXT_LEN];
+    uint16_t ciphertext_len;
+} ConfigEntry;
+
+static ConfigEntry entries[MAX_ENTRIES];
+static int num_entries = 0;
+
+void parse_encrypted_blob(void)
+{
+    const uint8_t *ptr = ENCRYPTED_BLOB_ADDR;
+    const uint8_t *end = ENCRYPTED_BLOB_ADDR + ENCRYPTED_BLOB_SIZE;
+
+    // Check for magic header
+    if (memcmp(ptr, (uint8_t[]){0xAB, 0xCD, 0xEF, 0x12}, 4) != 0) {
+        LOG_INF("Invalid blob magic header\n");
+        return;
+    }
+
+    ptr += 4;
+
+    // Read number of entries
+    uint16_t entry_count = ptr[0] | (ptr[1] << 8);
+    ptr += 2;
+
+    printk("🔍 Parsing %d encrypted entries\n", entry_count);
+
+    for (int i = 0; i < entry_count && ptr < end && num_entries < MAX_ENTRIES; i++) {
+        ConfigEntry *e = &entries[num_entries];
+        k_sleep(MSEC(10));
+        // 1. IV length
+        if (ptr + 1 > end) break;
+        e->iv_len = *ptr++;
+        if (e->iv_len > MAX_IV_LEN || ptr + e->iv_len > end) break;
+        memcpy(e->iv, ptr, e->iv_len);
+        ptr += e->iv_len;
+        k_sleep(MSEC(10));
+        // 2. AAD length (2 bytes)
+        if (ptr + 2 > end) break;
+        e->aad_len = ptr[0] | (ptr[1] << 8);
+        ptr += 2;
+        if (e->aad_len > MAX_AAD_LEN || ptr + e->aad_len > end) break;
+        memcpy(e->aad, ptr, e->aad_len);
+        ptr += e->aad_len;
+        k_sleep(MSEC(10));
+        // 3. Ciphertext + tag length (2 bytes)
+        if (ptr + 2 > end) break;
+        e->ciphertext_len = ptr[0] | (ptr[1] << 8);
+        ptr += 2;
+        if (e->ciphertext_len > MAX_CIPHERTEXT_LEN || ptr + e->ciphertext_len > end) break;
+        memcpy(e->ciphertext, ptr, e->ciphertext_len);
+        ptr += e->ciphertext_len;
+
+        LOG_INF("Parsed entry %d: IV len=%d, AAD len=%d, Cipher len=%d\n",
+               num_entries, e->iv_len, e->aad_len, e->ciphertext_len);
+
+        num_entries++;
+    }
+
+    LOG_INF("Total entries parsed: %d\n", num_entries);
+}
+
 void secure_memzero(void *v, size_t n)
 {
     volatile uint8_t *p = (volatile uint8_t *)v;
