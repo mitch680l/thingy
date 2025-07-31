@@ -34,7 +34,12 @@
         "dk_buttons_and_leds.h": "c",
         "nrf_modem_lib.h": "c",
         "reboot.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "crc.h": "c",
+        "flash_map.h": "c",
+        "crypto_extra.h": "c",
+        "printk.h": "c",
+        "crypto.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled",
     "nrf-connect.applications": []

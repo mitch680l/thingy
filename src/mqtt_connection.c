@@ -27,39 +27,27 @@ bool mqtt_connected = false;
 
 struct mqtt_utf8 struct_pass;
 struct mqtt_utf8 struct_user;
+char user_buf[64];
+char pass_buf[64];
 
 void set_user_pass() {
-    char password[20] = {0};
-    size_t password_len = sizeof(password);
-    get_password(password, &password_len);
+    const char *password = get_config("password");
+	strncpy(pass_buf, password, sizeof(pass_buf) - 1);
+	pass_buf[sizeof(pass_buf) - 1] = '\0';
+
+	const char *username = get_config("username");
+	strncpy(user_buf, username, sizeof(user_buf) - 1);
+	user_buf[sizeof(user_buf) - 1] = '\0';
+
     
-    char username[20] = {0};
-    size_t username_len = sizeof(username);
-    get_mqtt_username(username, &username_len);
+    LOG_INF("Setting MQTT username: %s", user_buf);
+    LOG_INF("Setting MQTT password: %s", pass_buf);
     
-    LOG_INF("Setting MQTT username: %s", username);
-    LOG_INF("Setting MQTT password: %s", password);
+    struct_pass.utf8 = (uint8_t *)pass_buf;
+    struct_pass.size = strlen(pass_buf);
+    struct_user.utf8 = (uint8_t *)user_buf;
+    struct_user.size = strlen(user_buf);
     
-    // Allocate persistent storage for the credentials
-    static char persistent_password[20];
-    static char persistent_username[20];
-    
-    // Copy the decrypted data to persistent storage
-    strncpy(persistent_password, password, sizeof(persistent_password) - 1);
-    persistent_password[sizeof(persistent_password) - 1] = '\0';
-    
-    strncpy(persistent_username, username, sizeof(persistent_username) - 1);
-    persistent_username[sizeof(persistent_username) - 1] = '\0';
-    
-    // Set up the structs to point to persistent storage
-    struct_pass.utf8 = (uint8_t *)persistent_password;
-    struct_pass.size = strlen(persistent_password);
-    struct_user.utf8 = (uint8_t *)persistent_username;
-    struct_user.size = strlen(persistent_username);
-    
-    // Now it's safe to zero out the temporary buffers
-    secure_memzero(password, sizeof(password));
-    secure_memzero(username, sizeof(username));
 }
 
 void clear_user_pass() {
@@ -185,7 +173,6 @@ int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
     int publish_time = k_uptime_get_32() - publish_start;
     
     LOG_DBG("mqtt_publish() took: %d ms, result: %d", publish_time, result);
-    
     return result;
 }
 
@@ -302,16 +289,15 @@ static int broker_init(void)
 		.ai_socktype = SOCK_STREAM
 	};
 
-	char mqtt_broker_host[MQTT_MAX_STR_LEN];
-	size_t mqtt_broker_host_len = sizeof(mqtt_broker_host);
-	get_http_host(mqtt_broker_host, &mqtt_broker_host_len);
+	const char *mqtt_broker_host = get_config("mqtt_broker_host");
+
+	
 
 	err = getaddrinfo(mqtt_broker_host, NULL, &hints, &result);
 	if (err) {
 		LOG_ERR("getaddrinfo failed: %d", err);
 		return -ECHILD;
 	}
-	secure_memzero(mqtt_broker_host, sizeof(mqtt_broker_host));
 	
 
 	addr = result;

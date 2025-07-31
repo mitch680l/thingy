@@ -150,7 +150,7 @@ void mqtt_thread_fn(void *arg1, void *arg2, void *arg3) {
         if (mqtt_connected && lte_connected_ok) {
             LOG_INF("MQTT and LTE connected: MQTT: %d, LTE: %d",
                     mqtt_connected, lte_connected_ok);
-            if ((start - last_fota_check) >= FOTA_CHECK_INTERVAL_MS) {
+            if ((start - last_fota_check) >= fota_interval_ms) {
                 LOG_INF("Suspending MQTT publish to check FOTA...");
 
                 if (fota_get_state() == FOTA_CONNECTED) {
@@ -201,6 +201,7 @@ void mqtt_init() {
     if (err) {
         LOG_ERR("mqtt_connect: %d", err);
     }
+    mqtt_connected = true;
 
     k_sleep(K_SECONDS(3));
 
@@ -233,6 +234,7 @@ static int init() {
         return err;
 	}
     parse_encrypted_blob();
+    test_decrypt_all_config_entries();
     heartbeat_config(HB_COLOR_RED, 1, 500);
     LOG_INF("Initializing modem");
 	err = modem_configure();
@@ -274,7 +276,7 @@ int main(void) {
            publish_lte_info = true;
         }
         int end = k_uptime_get();
-        LOG_INF("Main Loop Took: %d", end-start);
+        //LOG_INF("Main Loop Took: %d", end-start);
 
     }
     return 0;

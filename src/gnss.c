@@ -324,7 +324,7 @@ bool configure_gps_rate(uint8_t target_hz) {
  * @return void - initializes GPS hardware and configuration
  */
 void gnss_int(void) {
-    LOG_INF("Starting MAX-M10S GPS at %d Hz", GPS_TARGET_RATE_HZ);
+    LOG_INF("Starting MAX-M10S GPS at %d Hz", gps_target_rate);
     
     if (!device_is_ready(gpio0)) {
         LOG_ERR("GPIO0 device not ready");
@@ -343,7 +343,7 @@ void gnss_int(void) {
     
     for (int attempt = 0; attempt < GPS_MAX_CONFIG_ATTEMPTS; attempt++) {
         LOG_INF("Configuration attempt %d/%d", attempt + 1, GPS_MAX_CONFIG_ATTEMPTS);
-        if (configure_gps_rate(GPS_TARGET_RATE_HZ)) {
+        if (configure_gps_rate(gps_target_rate)) {
             gps_configured = true;
             break;
         }
@@ -365,7 +365,7 @@ void gnss_int(void) {
 void gnss_main_loop(void) {
     uint32_t current_time = k_uptime_get_32();
     
-    k_sleep(K_MSEC((1000 / GPS_TARGET_RATE_HZ)-13));
+    k_sleep(K_MSEC((1000 / gps_target_rate)-13));
     
     last_read_time = current_time;
     
@@ -410,7 +410,7 @@ void gnss_main_loop(void) {
             if (fix_rate_start_time > 0 && current_time - fix_rate_start_time >= 10000) {
                 actual_rate = fix_count_in_period / 10.0;
                 LOG_INF("GPS Rate: %.1f Hz (target: %d Hz, fixes: %d, total: %d)", 
-                        actual_rate, GPS_TARGET_RATE_HZ, fix_count_in_period, pvt_count);
+                        actual_rate, gps_target_rate, fix_count_in_period, pvt_count);
                 
                 fix_rate_start_time = current_time;
                 fix_count_in_period = 0;
@@ -424,6 +424,6 @@ void gnss_main_loop(void) {
     
     if (read_count % 500 == 0) {
         LOG_DBG("Read stats: %d reads, %d PVT messages, rate: %d Hz, partial: %zu bytes", 
-                read_count, pvt_count, GPS_TARGET_RATE_HZ, partial_buffer_len);
+                read_count, pvt_count, gps_target_rate, partial_buffer_len);
     }
 }

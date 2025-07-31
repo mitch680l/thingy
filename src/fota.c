@@ -20,8 +20,7 @@ enum fota_state current_state = FOTA_IDLE;
 fota_callback_t state_callback = NULL;
 struct k_work fota_work;
 
-char fota_host[MQTT_MAX_STR_LEN];
-size_t fota_host_len = sizeof(fota_host);
+
 
 LOG_MODULE_REGISTER(fota, LOG_LEVEL_INF);
 
@@ -51,7 +50,6 @@ void fota_dl_handler(const struct fota_download_evt *evt)
         break;
     case FOTA_DOWNLOAD_EVT_FINISHED:
         LOG_INF("FOTA download finished\n");
-        secure_memzero(fota_host, sizeof(fota_host));
         set_state(FOTA_READY_TO_APPLY, 0);
         fota_apply_update();
         break;
@@ -78,14 +76,13 @@ int download_firmware(void)
     
 
     
-    get_http_host(fota_host, &fota_host_len);
+    const char *fota_host = get_config("fota_host");
+    
     LOG_INF("Starting firmware download from %s%s\n", fota_host, firmware_filename);
 
     err = fota_download_start(fota_host, firmware_filename, SEC_TAG, 0, 0);
     if (err) {
         LOG_INF("fota_download_start() failed, err %d\n", err);
-        // Clean up before returning
-        secure_memzero(fota_host, sizeof(fota_host));
         return err;
     }
 
