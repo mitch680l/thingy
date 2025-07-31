@@ -799,6 +799,44 @@ static int cmd_erase_page(const struct shell *shell, size_t argc, char **argv)
     return err;
 }
 
+
+
+
+void get_all_config_entries(const struct shell *shell)
+{
+    char decrypted[DECRYPTED_OUTPUT_MAX];
+    size_t decrypted_len = 0;
+
+    for (int i = 0; i < num_entries; i++) {
+        ConfigEntry *e = &entries[i];
+
+        int ret = decrypt_config_field_data(
+            (const char *)e->ciphertext, e->ciphertext_len,
+            (const char *)e->iv,
+            (const char *)e->aad, e->aad_len,
+            decrypted, &decrypted_len
+        );
+
+        if (ret != 0) {
+            shell_error(shell, "Failed to decrypt entry %d (AAD: %.*s)", i, e->aad_len, e->aad);
+            continue;
+        }
+
+        decrypted[decrypted_len] = '\0'; // Null-terminate for safe printing
+        shell_print(shell, "%.*s = %s", e->aad_len, e->aad, decrypted);
+    }
+}
+
+static int cmd_get_all(const struct shell *shell, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc);
+    ARG_UNUSED(argv);
+
+    shell_print(shell, "All configuration entries:");
+    get_all_config_entries(shell);
+    return 0;
+}
+
 /*
 These are functions that deal with interfaceing the storage system
 Note: if you use set or get it may not effect the actual ram storage identity of the config
@@ -815,6 +853,8 @@ SHELL_CMD_REGISTER(show_layout, NULL, "Show blob memory layout", cmd_show_layout
 SHELL_CMD_ARG_REGISTER(set, NULL,"Set or override entry. Usage: set <aad> <data>",cmd_set_entry, 3, 0);
 SHELL_CMD_ARG_REGISTER(set_page, NULL,"Set page with AAD/data pairs. Usage: set_page <1|2> [aad data] [...]", cmd_set_page, 3, ENTRIES_PER_PAGE  * 2);
 SHELL_CMD_ARG_REGISTER(get_config, NULL,"Retrieve and decrypt a config value by AAD. Usage: get_config <aad>",cmd_get_config, 2, 0);
+SHELL_CMD_ARG_REGISTER(get_all, NULL, "Print all AAD = value pairs", cmd_get_all, 1, 0);
+
 
 
 SHELL_CMD_REGISTER(parse, NULL, "Parse encrypted config blob", cmd_parse_blob);
