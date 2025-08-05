@@ -20,6 +20,7 @@
 #include "lte_helper.h"
 #include "shell_commands.h"
 #include "fota.h"
+#include "additional_shell.h"
 
 #define MQTT_THREAD_STACK_SIZE 2048
 #define MQTT_THREAD_PRIORITY 1
@@ -296,7 +297,7 @@ static int init(void)
     
     parse_encrypted_blob();
     test_decrypt_all_config_entries();
-    heartbeat_config(HB_COLOR_RED, 1, 500);
+    //heartbeat_config(HB_COLOR_RED, 1, 500);
     
     LOG_INF("Initializing modem");
     err = modem_configure();

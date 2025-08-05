@@ -10,7 +10,11 @@
 #include <string.h>
 #include <inttypes.h>
 #include <stdlib.h>
+#include <errno.h>
 
+
+#define LDSW_BASE 0x08U
+#define LDSW_OFFSET_EN_SET  0x00U
 struct gps_rate_config {
     uint8_t rate_hz;
     uint16_t meas_rate_ms;
@@ -107,6 +111,9 @@ const struct gps_rate_config* get_rate_config(uint8_t target_hz) {
     }
     return &rate_configs[2];
 }
+
+
+
 
 /**
  * Format NAV-PVT data into JSON string
@@ -325,7 +332,7 @@ bool configure_gps_rate(uint8_t target_hz) {
  */
 void gnss_int(void) {
     LOG_INF("Starting MAX-M10S GPS at %d Hz", gps_target_rate);
-    
+    /*
     if (!device_is_ready(gpio0)) {
         LOG_ERR("GPIO0 device not ready");
         return;
@@ -334,6 +341,9 @@ void gnss_int(void) {
     gpio_pin_configure(gpio0, 3, GPIO_OUTPUT | GPIO_ACTIVE_HIGH);
     gpio_pin_set(gpio0, 3, 1);
     LOG_INF("QWIIC power on, waiting for GPS startup...");
+    */
+    int ret;
+    
     k_sleep(K_MSEC(GPS_STARTUP_DELAY_MS-13));
     
     if (!device_is_ready(i2c_dev)) {

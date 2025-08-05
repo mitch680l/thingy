@@ -6,7 +6,7 @@ project(yes)
 
 # NORDIC SDK APP START
 target_sources(app PRIVATE src/mqtt_connection.c)
-target_sources(app PRIVATE src/heartbeat.c)
+#target_sources(app PRIVATE src/heartbeat.c)
 target_sources(app PRIVATE src/shell_commands.c)
 target_sources(app PRIVATE src/main.c)
 target_sources(app PRIVATE src/gnss.c)

@@ -122,12 +122,12 @@ void lte_handler(const struct lte_lc_evt *const evt)
             if (current_state == FOTA_IDLE) {
                 set_state(FOTA_CONNECTED, 0);
             }
-            heartbeat_config(HB_COLOR_GREEN, 1, 500);
+            //heartbeat_config(HB_COLOR_GREEN, 1, 500);
         } else {
             if (current_state == FOTA_DOWNLOADING) {
                 set_state(FOTA_IDLE, 0);
             }
-            heartbeat_config(HB_COLOR_WHITE, 1, 500);
+            //heartbeat_config(HB_COLOR_WHITE, 1, 500);
         }
         break;
 
@@ -150,7 +150,7 @@ void lte_handler(const struct lte_lc_evt *const evt)
             if (current_state == FOTA_CONNECTED || current_state == FOTA_DOWNLOADING) {
                 set_state(FOTA_IDLE, 0);
             }
-            heartbeat_config(HB_COLOR_RED, 1, 500);
+            //heartbeat_config(HB_COLOR_RED, 1, 500);
             break;
         default:
             LOG_INF("LTE mode updated: Unknown");
