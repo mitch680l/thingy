@@ -170,33 +170,55 @@ int modem_configure(void)
 {
     int err;
 
+    LOG_INF("Starting modem configuration...");
+
+    LOG_INF("Step 6.1: Initializing modem library...");
     err = nrf_modem_lib_init();
     if (err) {
         LOG_ERR("Failed to initialize the modem library, error: %d", err);
         return err;
     }
+    LOG_INF("Modem library initialized successfully");
 
+    LOG_INF("Step 6.2: Initializing FOTA...");
     err = fota_init(set_state);
     if (err) {
         LOG_ERR("FOTA init failed: %d", err);
         return err;
     }
+    LOG_INF("FOTA initialized successfully");
 
+    LOG_INF("Step 6.3: Provisioning TLS credentials...");
     provision_all_tls_credentials();
+    LOG_INF("TLS credentials provisioned");
     
+    LOG_INF("Step 6.4: Setting LTE system mode...");
     lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_LTEM, LTE_LC_SYSTEM_MODE_PREFER_AUTO);
+    LOG_INF("LTE system mode set");
+    
+    LOG_INF("Step 6.5: Configuring PSM...");
     lte_lc_psm_req(false);
+    LOG_INF("PSM configured");
+    
+    LOG_INF("Step 6.6: Setting function mode...");
     lte_lc_func_mode_set(LTE_LC_FUNC_MODE_NORMAL);
+    LOG_INF("Function mode set");
 
-    LOG_INF("Connecting to LTE network");
+    LOG_INF("Step 6.7: Connecting to LTE network...");
     err = lte_lc_connect_async(lte_handler);
     if (err) {
         LOG_ERR("Error in lte_lc_connect_async, error: %d", err);
         return err;
     }
+    LOG_INF("LTE connection initiated");
 
-    k_sem_take(&lte_connected, K_FOREVER);
-    LOG_INF("Connected to LTE network");
+    LOG_INF("Step 6.8: Waiting for LTE connection...");
+    err = k_sem_take(&lte_connected, K_SECONDS(30)); // 30 second timeout
+    if (err) {
+        LOG_ERR("LTE connection timeout after 30 seconds");
+        return err;
+    }
+    LOG_INF("Connected to LTE network successfully");
 
     return 0;
 }

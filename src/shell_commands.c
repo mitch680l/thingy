@@ -1,5 +1,4 @@
 #include "shell_commands.h"
-#include "encrypted_config.h"
 #include <zephyr/sys/crc.h>
 #include <zephyr/storage/flash_map.h>
 #include <zephyr/shell/shell.h>

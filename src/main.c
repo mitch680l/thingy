@@ -14,6 +14,7 @@
 #include <dk_buttons_and_leds.h>
 #include <nrf_modem_gnss.h>
 #include <nrf_modem_at.h>
+#include <zephyr/sys/heap_listener.h>
 #include "mqtt_connection.h"
 #include "gnss.h"
 #include "heartbeat.h"
@@ -281,35 +282,53 @@ static int init(void)
     k_thread_priority_set(k_current_get(), 13);
     LOG_INF("NEW APP STARTING");
     
+    LOG_INF("Step 1: Opening persistent key...");
     err = open_persistent_key();
     if (err) {
         LOG_ERR("open_persistent_key: %d", err);
+    } else {
+        LOG_INF("Persistent key opened successfully");
     }
     
+    LOG_INF("Step 2: Initializing GNSS...");
     k_sleep(K_MSEC(100));
     gnss_int();
+    LOG_INF("GNSS initialization complete");
     
+    LOG_INF("Step 3: Initializing LEDs...");
     err = dk_leds_init();
     if (err) {
         LOG_ERR("Failed to initialize the LEDs Library");
         return err;
     }
+    LOG_INF("LEDs initialized successfully");
+
     
+    LOG_INF("Step 4: Parsing encrypted blob...");
     parse_encrypted_blob();
-    test_decrypt_all_config_entries();
-    //heartbeat_config(HB_COLOR_RED, 1, 500);
+    LOG_INF("Encrypted blob parsed");
+
     
-    LOG_INF("Initializing modem");
+    LOG_INF("Step 5: Testing decryption...");
+    test_decrypt_all_config_entries();
+    LOG_INF("Decryption test complete");
+    
+    LOG_INF("Step 6: Initializing modem...");
     err = modem_configure();
     if (err) {
         LOG_ERR("modem_configure failed: %d", err);
         return err;
     }
     
-    LOG_INF("Modem initialized");
+    LOG_INF("Modem initialized successfully");
     k_sleep(K_SECONDS(5));
+
     
+    LOG_INF("Step 7: Initializing MQTT...");
     mqtt_init();
+    LOG_INF("MQTT initialization complete");
+    
+    LOG_INF("All initialization steps completed successfully");
     return 0;
 }
 

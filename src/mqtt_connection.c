@@ -34,10 +34,18 @@ static char pass_buf[64];
 void set_user_pass(void)
 {
     const char *password = get_config("password");
+    if (!password || strcmp(password, "NULL") == 0) {
+        LOG_ERR("Failed to get password from config");
+        return;
+    }
     strncpy(pass_buf, password, sizeof(pass_buf) - 1);
     pass_buf[sizeof(pass_buf) - 1] = '\0';
 
     const char *username = get_config("username");
+    if (!username || strcmp(username, "NULL") == 0) {
+        LOG_ERR("Failed to get username from config");
+        return;
+    }
     strncpy(user_buf, username, sizeof(user_buf) - 1);
     user_buf[sizeof(user_buf) - 1] = '\0';
 
