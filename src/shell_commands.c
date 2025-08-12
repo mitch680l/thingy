@@ -172,6 +172,7 @@ static int cmd_login(const struct shell *sh, size_t argc, char **argv)
 static int cmd_logout(const struct shell *sh, size_t argc, char **argv)
 {
     ARG_UNUSED(argc); ARG_UNUSED(argv);
+    REQUIRE_AUTH(sh);
     set_locked_state(sh);
     shell_print(sh, "Logged out.");
     return 0;
@@ -314,6 +315,7 @@ static int cmd_parse_blob(const struct shell *shell, size_t argc, char **argv)
 {
     ARG_UNUSED(argc); ARG_UNUSED(argv);
     AUTH_TOUCH();
+    REQUIRE_AUTH(shell);
 
     shell_print(shell, "Parsing encrypted blob...");
     parse_encrypted_blob();
@@ -592,6 +594,9 @@ static int erase_entry_by_aad(const char *aad)
 }
 static int cmd_erase_entry(const struct shell *shell, size_t argc, char **argv)
 {
+    AUTH_TOUCH();
+    REQUIRE_AUTH(shell);
+
     if (argc != 2) {
         shell_print(shell, "Usage: erase_entry <aad>");
         return -EINVAL;
@@ -749,6 +754,7 @@ const char *get_config(const char *aad)
 static int cmd_get_config(const struct shell *shell, size_t argc, char **argv)
 {
     AUTH_TOUCH();
+    REQUIRE_AUTH(shell);
 
     if (argc != 2) {
         shell_error(shell, "Usage: cfg get_config <aad>");
@@ -920,6 +926,7 @@ static int cmd_set_entry(const struct shell *shell, size_t argc, char **argv)
 static int cmd_get_entry_hex(const struct shell *shell, size_t argc, char **argv)
 {
     AUTH_TOUCH();
+    REQUIRE_AUTH(shell);
 
     if (argc != 2) {
         shell_error(shell, "Usage: cfg get_hex <index>");
@@ -947,6 +954,7 @@ static int cmd_get_entry_hex(const struct shell *shell, size_t argc, char **argv
 static int cmd_get_page_hex(const struct shell *shell, size_t argc, char **argv)
 {
     AUTH_TOUCH();
+    REQUIRE_AUTH(shell);
 
     if (argc != 2) {
         shell_error(shell, "Usage: cfg get_page_hex <page_index:1-2>");
@@ -974,6 +982,7 @@ static int cmd_get_page_hex(const struct shell *shell, size_t argc, char **argv)
 static int cmd_get_blob_hex(const struct shell *shell, size_t argc, char **argv)
 {
     AUTH_TOUCH();
+    REQUIRE_AUTH(shell);
 
     shell_print(shell, "Full blob (size: %d, CRC at offset 0x%x):", ENCRYPTED_BLOB_SIZE, CRC_LOCATION_OFFSET);
     for (int i = 0; i < ENCRYPTED_BLOB_SIZE; i++) {
@@ -989,6 +998,7 @@ static int cmd_get_blob_hex(const struct shell *shell, size_t argc, char **argv)
 static int cmd_get_crc_info(const struct shell *shell, size_t argc, char **argv)
 {
     AUTH_TOUCH();
+    REQUIRE_AUTH(shell);
 
     uint32_t computed_crc = manual_crc32(ENCRYPTED_BLOB_ADDR, ENCRYPTED_BLOB_SIZE - 4);
     uint32_t stored_crc = *(uint32_t *)(ENCRYPTED_BLOB_ADDR + CRC_LOCATION_OFFSET);
@@ -1005,6 +1015,7 @@ static int cmd_get_crc_info(const struct shell *shell, size_t argc, char **argv)
 static int cmd_show_layout(const struct shell *shell, size_t argc, char **argv)
 {
     AUTH_TOUCH();
+    REQUIRE_AUTH(shell);
 
     shell_print(shell, "Encrypted Blob Layout:");
     shell_print(shell, "  Base Address:     0x%x", (unsigned int)ENCRYPTED_BLOB_ADDR);
@@ -1095,6 +1106,7 @@ static int cmd_get_all(const struct shell *shell, size_t argc, char **argv)
 {
     ARG_UNUSED(argc); ARG_UNUSED(argv);
     AUTH_TOUCH();
+    REQUIRE_AUTH(shell);
     
     shell_print(shell, "All configuration entries:");
     get_all_config_entries(shell);
@@ -1241,6 +1253,8 @@ static int cmd_rebuild_blob(const struct shell *shell, size_t argc, char **argv)
 {
     ARG_UNUSED(argc);
     ARG_UNUSED(argv);
+    AUTH_TOUCH();
+    REQUIRE_AUTH(shell);
 
     shell_print(shell, "Rebuilding blob from entries[] (compacted layout)...");
     int rc = rebuild_blob_compact_from_entries_stack();
@@ -1294,6 +1308,9 @@ SHELL_CMD_REGISTER(logout, NULL, "Logout and re-lock the shell",     cmd_logout)
 static int cmd_cfg_help(const struct shell *shell, size_t argc, char **argv)
 {
     ARG_UNUSED(argc); ARG_UNUSED(argv);
+    AUTH_TOUCH();
+    REQUIRE_AUTH(shell);
+    
     shell_print(shell,
         "cfg commands:\n"
         "  parse                         Parse encrypted blob into RAM index\n"

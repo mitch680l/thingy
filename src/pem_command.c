@@ -20,6 +20,8 @@
 
 
 
+
+
 /* Consistent, exact prototypes used by SHELL_CMD_ARG */
 static int cmd_keymgmt_put(const struct shell *sh, size_t argc, char **argv);
 static int cmd_keymgmt_status(const struct shell *sh, size_t argc, char **argv);
@@ -137,6 +139,9 @@ static char *trim_eol(char *s)
 
 static int cmd_keymgmt_put(const struct shell *sh, size_t argc, char **argv)
 {
+	AUTH_TOUCH();
+	REQUIRE_AUTH(sh);
+
 	if (argc < 4) {
 		shell_error(sh, "Usage: keymgmt put <sec_tag> <ca|cert|key> <one_line>");
 		return -EINVAL;
@@ -214,6 +219,8 @@ static int cmd_keymgmt_put(const struct shell *sh, size_t argc, char **argv)
 static int cmd_keymgmt_status(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc); ARG_UNUSED(argv);
+	AUTH_TOUCH();
+	REQUIRE_AUTH(sh);
 	k_mutex_lock(&g_lock, K_FOREVER);
 	if (!g_active) {
 		shell_print(sh, "IDLE");
@@ -229,6 +236,8 @@ static int cmd_keymgmt_status(const struct shell *sh, size_t argc, char **argv)
 static int cmd_keymgmt_abort(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc); ARG_UNUSED(argv);
+	AUTH_TOUCH();
+	REQUIRE_AUTH(sh);
 	k_mutex_lock(&g_lock, K_FOREVER);
 	if (!g_active) {
 		shell_print(sh, "No active session");
@@ -244,6 +253,8 @@ static int cmd_keymgmt_abort(const struct shell *sh, size_t argc, char **argv)
 static int cmd_keymgmt_print(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc); ARG_UNUSED(argv);
+	AUTH_TOUCH();
+	REQUIRE_AUTH(sh);
 	
 	k_mutex_lock(&g_lock, K_FOREVER);
 	if (!g_active) {
