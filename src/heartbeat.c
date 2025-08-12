@@ -1,98 +1,83 @@
 #include "heartbeat.h"
-#include <dk_buttons_and_leds.h>
+#include "config.h"
+#include "../drivers/led/led_driver.h"
 
-#define HB_STACK_SIZE   512
-#define HB_PRIORITY     10
+extern struct ktd2026_device g_ktd;
 
-static struct k_thread hb_thread;
-static K_THREAD_STACK_DEFINE(hb_stack, HB_STACK_SIZE);
 
-static volatile bool hb_running;
-static uint8_t hb_color;
-static uint8_t hb_pulses;
-static uint32_t hb_pulse_dur;
+#define KTD2026_REG_EN_RST        0x00
+#define KTD2026_REG_FLASH_PERIOD  0x01
+#define KTD2026_REG_FLASH_ON1     0x02
+#define KTD2026_REG_FLASH_ON2     0x03
+#define KTD2026_REG_CH_CTRL       0x04
+#define KTD2026_REG_RAMP_RATE     0x05
+#define KTD2026_REG_LED1_IOUT     0x06
+#define KTD2026_REG_LED2_IOUT     0x07
+#define KTD2026_REG_LED3_IOUT     0x08
 
-/**
- * @brief Helper to set or clear LEDs based on color mask
- */
-static inline void set_color(bool on)
+#define KTD_CH_MODE_OFF   0x0
+#define KTD_CH_MODE_PWM1  0x2
+#define KTD_REG4(ch1, ch2, ch3) \
+    ((((ch3) & 0x3) << 4) | (((ch2) & 0x3) << 2) | ((ch1) & 0x3))
+
+
+#define KTD_REG0_FAST_ENABLE  0x7C  
+
+#define IOUT_5MA_CODE  40
+
+
+
+static void ktd2026_blink_common_init(void)
 {
-    if (hb_color & HB_COLOR_RED) {
-        dk_set_led(DK_LED1, on);
-    }
-    if (hb_color & HB_COLOR_GREEN) {
-        dk_set_led(DK_LED2, on);
-    }
-    if (hb_color & HB_COLOR_BLUE) {
-        dk_set_led(DK_LED3, on);
-    }
+    static bool initialized;
+
+    if (initialized) return;
+
+    // Enable device, fast ramp scale
+    (void)ktd2026_write_en_rst(&g_ktd, KTD_REG0_FAST_ENABLE);
+
+    // Fastest rise/fall (base rate = 0; global scale is in Reg0)
+    (void)ktd2026_write_ramp_rate(&g_ktd, 0x00);
+
+    // 1 Hz ≈ 1.024 s → index 6; linear ramp (MSB=0)
+    (void)ktd2026_write_flash_period(&g_ktd, 6);
+
+    // 50% duty on Timer1
+    (void)ktd2026_write_flash_on1(&g_ktd, 128);
+
+    // Leave Timer2 unused
+    (void)ktd2026_write_flash_on2(&g_ktd, 0);
+
+    // Default current for all channels; unused channels can be 0 if you prefer
+    (void)ktd2026_write_led1_iout(&g_ktd, IOUT_5MA_CODE);
+    (void)ktd2026_write_led2_iout(&g_ktd, IOUT_5MA_CODE);
+    (void)ktd2026_write_led3_iout(&g_ktd, IOUT_5MA_CODE);
+
+    // Start with all channels OFF; blink functions will map a single channel to PWM1
+    (void)ktd2026_write_channel_ctrl(&g_ktd, KTD_REG4(KTD_CH_MODE_OFF, KTD_CH_MODE_OFF, KTD_CH_MODE_OFF));
+
+    initialized = true;
 }
 
-/**
- * @brief Heartbeat thread: pulses in fixed 1s cycle
- */
-static void heartbeat_thread_fn(void *p1, void *p2, void *p3)
-{
-    uint32_t total_on, off_time;
-    
-    ARG_UNUSED(p1);
-    ARG_UNUSED(p2);
-    ARG_UNUSED(p3);
-    
-    while (hb_running) {
-        total_on = hb_pulses * hb_pulse_dur;
-        off_time = hb_pulses ? ((1000U - total_on) / hb_pulses) : 1000U;
 
-        for (uint8_t i = 0; i < hb_pulses && hb_running; i++) {
-            set_color(true);
-            k_msleep(hb_pulse_dur);
-            set_color(false);
-            k_msleep(off_time);
-        }
-        if (hb_pulses == 0) {
-            k_msleep(1000U);
-        }
-    }
-    set_color(false);
+static void ktd2026_program_1hz_pwm1(uint8_t reg4_map)
+{
+    ktd2026_blink_common_init();
+    (void)ktd2026_write_channel_ctrl(&g_ktd, reg4_map);
 }
 
-/**
- * @brief Configure and start heartbeat with specified parameters
- */
-int heartbeat_config(uint8_t color, uint8_t pulses, uint32_t pulse_duration_ms)
+void ktd2026_blink_red_1hz(void)
 {
-    int err;
-    
-    if (!hb_running) {
-        err = dk_leds_init();
-        if (err) {
-            return err;
-        }
-    } else {
-        heartbeat_stop();
-    }
-
-    hb_color = color;
-    hb_pulses = pulses;
-    hb_pulse_dur = pulse_duration_ms;
-    hb_running = true;
-
-    k_thread_create(&hb_thread, hb_stack, HB_STACK_SIZE,
-                    heartbeat_thread_fn,
-                    NULL, NULL, NULL,
-                    HB_PRIORITY, 0, K_NO_WAIT);
-    return 0;
+    ktd2026_program_1hz_pwm1(KTD_REG4(KTD_CH_MODE_PWM1, KTD_CH_MODE_OFF,  KTD_CH_MODE_OFF));
 }
 
-/**
- * @brief Stop the heartbeat and turn off LEDs
- */
-void heartbeat_stop(void)
+void ktd2026_blink_green_1hz(void)
 {
-    if (!hb_running) {
-        return;
-    }
-    hb_running = false;
-    k_thread_join(&hb_thread, K_FOREVER);
-    set_color(false);
+
+    ktd2026_program_1hz_pwm1(KTD_REG4(KTD_CH_MODE_OFF,  KTD_CH_MODE_PWM1, KTD_CH_MODE_OFF));
+}
+
+void ktd2026_blink_blue_1hz(void)
+{
+    ktd2026_program_1hz_pwm1(KTD_REG4(KTD_CH_MODE_OFF,  KTD_CH_MODE_OFF,  KTD_CH_MODE_PWM1));
 }

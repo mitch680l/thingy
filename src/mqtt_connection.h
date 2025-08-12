@@ -11,7 +11,6 @@
 #include <zephyr/net/socket.h>
 
 extern bool mqtt_connected;
-
 /**
  * @brief Initialize the MQTT client structure
  */
@@ -28,19 +27,12 @@ int fds_init(struct mqtt_client *c, struct pollfd *fds);
 int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
                  uint8_t *data, size_t len, const char *mqtt_publish_topic);
 
-/**
- * @brief Check if MQTT connection is alive by sending keepalive
- */
-bool mqtt_is_connected_robust(struct mqtt_client *client);
 
-/**
- * @brief Reconnect to MQTT broker
- */
-int mqtt_reconnect(struct mqtt_client *client);
 
+static int publish_all(void);
+
+static void mqtt_handle(void);
 void provision_cert(void);
-void set_user_pass();
-void clear_user_pass();
 void provision_all_tls_credentials(void);
 
 #endif /* _CONNECTION_H_ */

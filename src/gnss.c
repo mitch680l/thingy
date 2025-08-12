@@ -2,7 +2,6 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 #include "gnss.h"
 #include "shell_commands.h" 
@@ -11,10 +10,9 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <errno.h>
+#include "config.h"
 
 
-#define LDSW_BASE 0x08U
-#define LDSW_OFFSET_EN_SET  0x00U
 struct gps_rate_config {
     uint8_t rate_hz;
     uint16_t meas_rate_ms;
@@ -70,7 +68,6 @@ static struct ubx_nav_pvt_t pvt;
 static uint32_t last_tow = 0;
 static int pvt_count = 0;
 static int read_count = 0;
-char json_payload[512] = "NO PVT";
 static int fix_count_in_period = 0;
 static uint32_t fix_rate_start_time = 0;
 static bool gps_configured = false;
@@ -78,7 +75,6 @@ static uint32_t last_read_time = 0;
 static double actual_rate = 0.0;
 LOG_MODULE_REGISTER(gnss_opt);
 
-const struct device *gpio0 = DEVICE_DT_GET(GPIO0_NODE);
 const struct device *i2c_dev = DEVICE_DT_GET(I2C_NODE);
 
 /**
@@ -332,18 +328,6 @@ bool configure_gps_rate(uint8_t target_hz) {
  */
 void gnss_int(void) {
     LOG_INF("Starting MAX-M10S GPS at %d Hz", gps_target_rate);
-    /*
-    if (!device_is_ready(gpio0)) {
-        LOG_ERR("GPIO0 device not ready");
-        return;
-    }
-    
-    gpio_pin_configure(gpio0, 3, GPIO_OUTPUT | GPIO_ACTIVE_HIGH);
-    gpio_pin_set(gpio0, 3, 1);
-    LOG_INF("QWIIC power on, waiting for GPS startup...");
-    */
-    int ret;
-    
     k_sleep(K_MSEC(GPS_STARTUP_DELAY_MS-13));
     
     if (!device_is_ready(i2c_dev)) {

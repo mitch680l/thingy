@@ -5,10 +5,10 @@
  */
 
 #include "fota.h"
-
+#include "config.h"
 #ifdef CONFIG_FOTA_USE_HTTPS
 #include <nrf_socket.h>
-#define TLS_SEC_TAG 42
+#define TLS_SEC_TAG 44
 #define SEC_TAG (TLS_SEC_TAG)
 #else
 #define SEC_TAG (-1)
@@ -70,7 +70,7 @@ void fota_dl_handler(const struct fota_download_evt *evt)
 int download_firmware(void)
 {
     int err;
-    const char *fota_host;
+    
 
     err = fota_download_init(fota_dl_handler);
     if (err) {
@@ -78,7 +78,6 @@ int download_firmware(void)
         return err;
     }
 
-    fota_host = get_config("fota_host");
     
     LOG_INF("Starting firmware download from %s%s", fota_host, firmware_filename);
 

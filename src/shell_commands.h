@@ -15,20 +15,10 @@
 #include <tfm_ns_interface.h>
 
 
-#define GPS_READ_BUFFER_SIZE 126  
-#define GPS_STARTUP_DELAY_MS 2000  
-#define GPS_CONFIG_TIMEOUT_MS 500  
-#define GPS_MAX_CONFIG_ATTEMPTS 3
-
-#define MQTT_MAX_STR_LEN 128
 
 
-extern char mqtt_client_id[MQTT_MAX_STR_LEN];               
-extern int  mqtt_broker_port;
-extern int interval_mqtt;
-extern int fota_interval_ms;
-extern int gps_target_rate;
-extern char firmware_filename[MQTT_MAX_STR_LEN];
+
+
 
 const char *get_config(const char *aad);
 void secure_memzero(void *v, size_t n);

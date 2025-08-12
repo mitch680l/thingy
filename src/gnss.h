@@ -2,14 +2,11 @@
 #define GNSS_H
 
 #define I2C_NODE DT_NODELABEL(i2c2)
-#define M10S_ADDR 0x42
-
 #define QWIIC_EN_NODE DT_ALIAS(qwiic_en)
-#define GPIO0_NODE DT_NODELABEL(gpio0)
+
 
 extern const struct device *i2c_dev;
-extern const struct device *gpio0;
-#define NAV_PVT_LEN 92
+
 
 struct __attribute__((packed)) ubx_nav_pvt_t {
     uint32_t iTOW;

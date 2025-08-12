@@ -13,8 +13,17 @@
 #include <modem/modem_key_mgmt.h>
 #include "mqtt_connection.h"
 #include "shell_commands.h"
-
+#include "config.h"
+#include "lte_helper.h"
+#include "fota.h"
 #define TLS_SEC_TAG 42
+
+static struct mqtt_client client;
+static struct pollfd fds;
+
+K_THREAD_STACK_DEFINE(mqtt_thread_stack, MQTT_THREAD_STACK_SIZE);
+static struct k_thread mqtt_thread_data;
+static volatile bool got_connack;
 
 static uint8_t rx_buffer[256];
 static uint8_t tx_buffer[516];
@@ -26,46 +35,9 @@ LOG_MODULE_REGISTER(mqtt_conn, LOG_LEVEL_INF);
 
 bool mqtt_connected = false;
 
-static struct mqtt_utf8 struct_pass;
-static struct mqtt_utf8 struct_user;
-static char user_buf[64];
-static char pass_buf[64];
 
-void set_user_pass(void)
-{
-    const char *password = get_config("password");
-    if (!password || strcmp(password, "NULL") == 0) {
-        LOG_ERR("Failed to get password from config");
-        return;
-    }
-    strncpy(pass_buf, password, sizeof(pass_buf) - 1);
-    pass_buf[sizeof(pass_buf) - 1] = '\0';
 
-    const char *username = get_config("username");
-    if (!username || strcmp(username, "NULL") == 0) {
-        LOG_ERR("Failed to get username from config");
-        return;
-    }
-    strncpy(user_buf, username, sizeof(user_buf) - 1);
-    user_buf[sizeof(user_buf) - 1] = '\0';
 
-    LOG_INF("Setting MQTT username: %s", user_buf);
-    LOG_INF("Setting MQTT password: %s", pass_buf);
-
-    struct_pass.utf8 = (uint8_t *)pass_buf;
-    struct_pass.size = strlen(pass_buf);
-    struct_user.utf8 = (uint8_t *)user_buf;
-    struct_user.size = strlen(user_buf);
-}
-
-void clear_user_pass(void)
-{
-    struct_pass.utf8 = NULL;
-    struct_pass.size = 0;
-    struct_user.utf8 = NULL;
-    struct_user.size = 0;
-    LOG_INF("Cleared MQTT username and password");
-}
 
 void provision_all_tls_credentials(void)
 {
@@ -209,6 +181,9 @@ void mqtt_evt_handler(struct mqtt_client *const c, const struct mqtt_evt *evt)
             mqtt_connected = false;
             break;
         }
+        else {
+            got_connack = true;
+        }
         LOG_INF("MQTT client connected");
         mqtt_connected = true;
         break;
@@ -296,8 +271,7 @@ static int broker_init(void)
         .ai_socktype = SOCK_STREAM
     };
 
-    const char *mqtt_broker_host = get_config("mqtt_broker_host");
-
+    
     err = getaddrinfo(mqtt_broker_host, NULL, &hints, &result);
     if (err) {
         LOG_ERR("getaddrinfo failed: %d", err);
@@ -441,30 +415,355 @@ bool mqtt_is_connected_robust(struct mqtt_client *client)
     return true;
 }
 
+static int wait_for_connack(struct mqtt_client *client, struct pollfd *fds, int timeout_ms)
+{
+    int64_t deadline = k_uptime_get() + timeout_ms;
+
+    while (k_uptime_get() < deadline) {
+        int kleft = (int)(deadline - k_uptime_get());
+        if (kleft < 0) kleft = 0;
+
+        int rc = poll(fds, 1, kleft);
+        if (rc < 0) {
+            return -errno;
+        }
+        if (rc > 0 && (fds->revents & POLLIN)) {
+            /* This parses incoming packets and invokes mqtt_evt_handler() */
+            int irc = mqtt_input(client);
+            if (irc && irc != -EAGAIN) {
+                return irc;
+            }
+            if (got_connack) {
+                return 0;
+            }
+        }
+
+        /* Keepalive machinery */
+        int lrc = mqtt_live(client);
+        if (lrc && lrc != -EAGAIN) {
+            return lrc;
+        }
+
+        if (got_connack) {
+            return 0;
+        }
+    }
+
+    return -ETIMEDOUT;
+}
+
+int mqtt_reconnect(struct mqtt_client *client,
+                   struct pollfd *fds,
+                   int initial_backoff_ms,
+                   int max_backoff_ms)
+{
+    int err;
+    int backoff = initial_backoff_ms;
+
+    LOG_INF("Attempting MQTT reconnection...");
+
+    /* Stop any external poll loop before this point */
+
+    /* Try to disconnect cleanly; if that fails, abort the client */
+    err = mqtt_disconnect(client, NULL);
+    if (err) {
+        LOG_WRN("mqtt_disconnect: %d, aborting", err);
+        mqtt_abort(client);
+    }
+
+    /* Small pause to ensure socket teardown */
+    k_sleep(K_SECONDS(1));
+
+    for (;;) {
+        got_connack = false;
+
+        err = mqtt_connect(client);
+        if (err) {
+            LOG_ERR("mqtt_connect failed: %d (%s)", err, strerror(-err));
+            goto retry;
+        }
+
+        /* New socket => re-init fds */
+        fds->fd = client->transport.type == MQTT_TRANSPORT_NON_SECURE
+                  ? client->transport.tcp.sock
+                  : client->transport.tls.sock;
+        fds->events = POLLIN;
+        fds->revents = 0;
+
+        LOG_INF("MQTT reconnection initiated, waiting for CONNACK...");
+
+        err = wait_for_connack(client, fds, 15000); /* 15s timeout */
+        if (!err) {
+            LOG_INF("MQTT CONNACK received");
+
+            /* If using clean sessions, you must resubscribe here */
+            /* mqtt_subscribe(client, &sub); ... */
+
+            /* Success: caller can resume the normal poll loop */
+            return 0;
+        }
+
+        LOG_ERR("Waiting for CONNACK failed: %d (%s)", err, strerror(-err));
+        /* Make sure we’re not half-open before retrying */
+        mqtt_abort(client);
+
+    retry:
+        LOG_INF("Retrying in %d ms", backoff);
+        k_sleep(K_MSEC(backoff));
+        backoff = MIN(max_backoff_ms, backoff * 2 + (sys_rand32_get() % 500)); // jitter
+    }
+}
+
+
 /**
- * @brief Reconnect to MQTT broker
+ * @brief Handle MQTT operations including polling and publishing
  */
-int mqtt_reconnect(struct mqtt_client *client)
+static void mqtt_handle(void)
+{
+    static int bad_publish = 0;
+    int err, ret;
+    int start_time, poll_start, poll_time, input_start, input_time;
+    int publish_start, publish_time, error_handling_start, error_handling_time, total_time;
+
+    start_time = k_uptime_get_32();
+    k_sleep(K_MSEC(interval_mqtt));
+
+    poll_start = k_uptime_get_32();
+    ret = poll(&fds, 1, 0);
+    poll_time = k_uptime_get_32() - poll_start;
+    LOG_DBG("poll() took: %d ms", poll_time);
+
+    if (ret < 0) {
+        LOG_ERR("poll() error: %d", errno);
+    } else if ((ret > 0) && (fds.revents & POLLIN)) {
+        input_start = k_uptime_get_32();
+        mqtt_input(&client);
+        input_time = k_uptime_get_32() - input_start;
+        LOG_DBG("mqtt_input took: %d ms", input_time);
+    }
+
+    LOG_DBG("MQTT Publish");
+
+    publish_start = k_uptime_get_32();
+    err = publish_all();
+    publish_time = k_uptime_get_32() - publish_start;
+    LOG_DBG("publish_all() took: %d ms", publish_time);
+
+    error_handling_start = k_uptime_get_32();
+    
+    if (err) {
+    LOG_ERR("data_publish: %d (%s)", err, strerror(-err));
+
+    if (err == -EAGAIN) {
+        /* Buffer busy — just skip reconnect and retry later */
+        LOG_WRN("Publish busy, will retry later");
+    } else {
+        LOG_WRN("Bad publish count: %d", bad_publish);
+        bad_publish++;
+
+        if (bad_publish >= BAD_PUBLISH_LIMIT) {
+            sys_reboot(SYS_REBOOT_COLD);
+        }
+
+        /* Attempt full reconnect with backoff and CONNACK wait */
+        int rc = mqtt_reconnect(&client, &fds,
+                                500,          /* initial_backoff_ms */
+                                30000);       /* max_backoff_ms */
+
+        if (rc) {
+            LOG_ERR("MQTT reconnect failed: %d (%s)", rc, strerror(-rc));
+            mqtt_connected = false;
+        } else {
+            mqtt_connected = true;
+            LOG_INF("MQTT reconnected successfully");
+
+            /* If using clean session, re-subscribe here */
+            // mqtt_subscribe(&client, &sub);
+        }
+    }
+    } else {
+        bad_publish = 0;
+    }
+    error_handling_time = k_uptime_get_32() - error_handling_start;
+    LOG_DBG("Error handling took: %d ms", error_handling_time);
+
+    total_time = k_uptime_get_32() - start_time;
+    LOG_DBG("Total mqtt_handle() took: %d ms", total_time);
+}
+
+/**
+ * @brief MQTT thread function with improved connectivity handling
+ */
+void mqtt_thread_fn(void *arg1, void *arg2, void *arg3)
+{
+    int64_t last_fota_check = k_uptime_get();
+
+    while (1) {
+        int64_t start = k_uptime_get();
+        enum lte_lc_nw_reg_status reg_status;
+        int lte_err = lte_lc_nw_reg_status_get(&reg_status);
+        bool lte_connected_ok = (lte_err == 0) && (reg_status == LTE_LC_NW_REG_REGISTERED_HOME ||  reg_status == LTE_LC_NW_REG_REGISTERED_ROAMING);
+
+        
+        if (!lte_connected_ok) {
+            LOG_WRN("LTE not connected: status=%d, err=%d", reg_status, lte_err);
+            mqtt_connected = false;
+            k_sem_take(&lte_connected, K_FOREVER);
+            continue;
+        }
+
+        
+        LOG_INF("MQTT and LTE connected: MQTT: %d, LTE: %d", mqtt_connected, lte_connected_ok);
+        
+        if ((start - last_fota_check) >= fota_interval_ms) {
+            LOG_INF("Suspending MQTT publish to check FOTA...");
+            
+            if (fota_get_state() == FOTA_CONNECTED) {
+                check_fota_server();
+            } else {
+                LOG_INF("LTE not connected, skipping FOTA check.");
+            }
+            
+            last_fota_check = start;
+        }
+
+        if (fota_get_state() == FOTA_DOWNLOADING) {
+            LOG_INF("FOTA download in progress, skipping MQTT publish.");
+            k_sleep(K_SECONDS(1));
+            continue;
+        }
+        
+        mqtt_handle();
+        
+        int64_t end = k_uptime_get();
+        LOG_INF("MQTT Thread Took: %d ms", (int)(end - start));
+    }
+}
+
+/**
+ * @brief Publish all pending data to MQTT broker
+ */
+static int publish_all(void)
+{
+    static int err = 0;
+    static char topic[200];
+    static char last_payload[sizeof(json_payload)] = {0};
+    static char last_sensor_payload[sizeof(sensor_payload)] = {0};
+    enum lte_lc_nw_reg_status status;
+    
+    k_mutex_lock(&json_mutex, K_FOREVER);
+    
+    if (strcmp(json_payload, last_payload) == 0) {
+        LOG_WRN("No new GNSS fix since last publish!");
+        lte_lc_nw_reg_status_get(&status);
+       
+        if (status != LTE_LC_NW_REG_REGISTERED_HOME || !mqtt_connected) {
+            LOG_WRN("Not connected to LTE or MQTT");
+            k_mutex_unlock(&json_mutex);
+            return -ENOTCONN;
+        } else {
+            err = 0;
+            mqtt_live(&client);
+        }
+    }
+    else {
+
+        if (topic_gps[0] != '\0') {
+            snprintf(topic, sizeof(topic), "%s%s", mqtt_client_id, topic_gps);
+            err = data_publish(&client, MQTT_QOS_0_AT_MOST_ONCE,
+                               (uint8_t *)json_payload, strlen(json_payload), topic);
+            if (err == 0) {
+                memcpy(last_payload, json_payload, sizeof(json_payload));
+            } else {
+                LOG_ERR("Failed to publish GPS data: %d", err);
+            }
+        } else {
+            LOG_WRN("GPS topic not configured, skipping GPS publish");
+        }
+    }
+
+
+    if (topic_sensor[0] != '\0') {
+        if (strcmp(sensor_payload, last_sensor_payload) != 0) {
+            snprintf(topic, sizeof(topic), "%s%s", mqtt_client_id, topic_sensor);
+            int sensor_err = data_publish(&client, MQTT_QOS_0_AT_MOST_ONCE,
+                               (uint8_t *)sensor_payload, strlen(sensor_payload), topic);
+            if (sensor_err == 0) {
+                memcpy(last_sensor_payload, sensor_payload, sizeof(sensor_payload));
+                LOG_INF("Published sensor data");
+            } else {
+                LOG_ERR("Failed to publish sensor data: %d", sensor_err);
+                if (err == 0) {
+                    err = sensor_err;
+                }
+            }
+        } else {
+            LOG_DBG("No new sensor data since last publish");
+        }
+    } else {
+        LOG_DBG("Sensor topic not configured, skipping sensor publish");
+    }
+    
+
+    if (publish_lte_info && topic_lte[0] != '\0') {
+        snprintf(topic, sizeof(topic), "%s%s", mqtt_client_id, topic_lte);
+        int lte_err = data_publish(&client, MQTT_QOS_0_AT_MOST_ONCE,
+                           (uint8_t *)json_payload_lte, strlen(json_payload_lte), topic);
+        if (lte_err == 0) {
+            publish_lte_info = false;
+            LOG_INF("Published LTE info");
+        } else {
+            LOG_ERR("Failed to publish LTE info: %d", lte_err);
+            if (err == 0) {
+                err = lte_err;
+            }
+        }
+    } else if (publish_lte_info) {
+        LOG_WRN("LTE topic not configured, skipping LTE publish");
+        publish_lte_info = false;
+    }
+    
+    k_mutex_unlock(&json_mutex);
+    return err;
+}
+
+/**
+ * @brief Initialize MQTT connection and start thread
+ */
+void mqtt_init(void)
 {
     int err;
 
-    LOG_INF("Attempting MQTT reconnection...");
+    LOG_INF("Initializing MQTT connection");
+
+    set_user_pass();
+    k_sleep(K_SECONDS(1));
     
-    if (mqtt_connected) {
-        LOG_WRN("Already connected to MQTT");
-        return 0;
-    }
-
-    mqtt_disconnect(client, NULL);
-    k_sleep(K_SECONDS(2));
-
-    err = mqtt_connect(client);
+    err = client_init(&client);
     if (err) {
-        LOG_ERR("MQTT reconnect failed: %d", err);
-        mqtt_connected = false;
-        return err;
+        LOG_ERR("client_init: %d", err);
+        return;
+    }
+    
+    k_sleep(K_SECONDS(1));
+
+    err = mqtt_connect(&client);
+    if (err) {
+        LOG_ERR("Initial mqtt_connect failed: %d", err);
     }
 
-    LOG_INF("MQTT reconnection initiated, waiting for CONNACK...");
-    return 0;
+    k_sleep(K_SECONDS(3));
+
+    err = fds_init(&client, &fds);
+    if (err) {
+        LOG_ERR("fds_init: %d", err);
+        return;
+    }
+
+    k_thread_create(&mqtt_thread_data, mqtt_thread_stack,
+                    K_THREAD_STACK_SIZEOF(mqtt_thread_stack),
+                    mqtt_thread_fn, NULL, NULL, NULL,
+                    MQTT_THREAD_PRIORITY, 0, K_NO_WAIT);
+    
+    LOG_INF("MQTT thread started");
 }

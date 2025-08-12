@@ -39,7 +39,13 @@
         "flash_map.h": "c",
         "crypto_extra.h": "c",
         "printk.h": "c",
-        "crypto.h": "c"
+        "crypto.h": "c",
+        "config.h": "c",
+        "socket.h": "c",
+        "shell.h": "c",
+        "led_driver.h": "c",
+        "test.h": "c",
+        "modem_key_mgmt.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled",
     "nrf-connect.applications": []

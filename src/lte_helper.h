@@ -17,7 +17,11 @@
 #include <nrf_modem_at.h>
 #include <zephyr/net/mqtt.h>
 #include <modem/modem_info.h>
+#include "mqtt_connection.h"
 /*Operator Conversion Data*/
+
+extern struct k_mutex json_mutex;
+
 typedef struct {
     const char *mccmnc;
     const char *name;

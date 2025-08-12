@@ -3,13 +3,13 @@
 #include "heartbeat.h"
 #include "shell_commands.h"
 #include "fota.h"
-
+#include "config.h"
 LOG_MODULE_REGISTER(lte, LOG_LEVEL_INF);
 
 bool update_lte_info = false;
 char json_payload_lte[512] = "NO LTE";
 bool publish_lte_info = false;
-
+K_MUTEX_DEFINE(json_mutex);
 K_SEM_DEFINE(lte_connected, 0, 1);
 /**
  * @brief Look up operator name by MCC/MNC code
@@ -94,6 +94,8 @@ void pack_lte_data(void)
 /**
  * @brief LTE event handler
  */
+
+ 
 void lte_handler(const struct lte_lc_evt *const evt)
 {
     switch (evt->type) {
@@ -122,12 +124,12 @@ void lte_handler(const struct lte_lc_evt *const evt)
             if (current_state == FOTA_IDLE) {
                 set_state(FOTA_CONNECTED, 0);
             }
-            //heartbeat_config(HB_COLOR_GREEN, 1, 500);
+            ktd2026_blink_green_1hz();
         } else {
             if (current_state == FOTA_DOWNLOADING) {
                 set_state(FOTA_IDLE, 0);
             }
-            //heartbeat_config(HB_COLOR_WHITE, 1, 500);
+            ktd2026_blink_blue_1hz();
         }
         break;
 
@@ -150,7 +152,7 @@ void lte_handler(const struct lte_lc_evt *const evt)
             if (current_state == FOTA_CONNECTED || current_state == FOTA_DOWNLOADING) {
                 set_state(FOTA_IDLE, 0);
             }
-            //heartbeat_config(HB_COLOR_RED, 1, 500);
+            ktd2026_blink_red_1hz();
             break;
         default:
             LOG_INF("LTE mode updated: Unknown");
@@ -163,6 +165,8 @@ void lte_handler(const struct lte_lc_evt *const evt)
     }
 }
 
+
+
 /**
  * @brief Configure and connect to LTE network
  */
@@ -172,47 +176,33 @@ int modem_configure(void)
 
     LOG_INF("Starting modem configuration...");
 
-    LOG_INF("Step 6.1: Initializing modem library...");
     err = nrf_modem_lib_init();
     if (err) {
         LOG_ERR("Failed to initialize the modem library, error: %d", err);
         return err;
     }
-    LOG_INF("Modem library initialized successfully");
 
-    LOG_INF("Step 6.2: Initializing FOTA...");
+
     err = fota_init(set_state);
     if (err) {
         LOG_ERR("FOTA init failed: %d", err);
         return err;
     }
-    LOG_INF("FOTA initialized successfully");
-
-    LOG_INF("Step 6.3: Provisioning TLS credentials...");
+   
     provision_all_tls_credentials();
-    LOG_INF("TLS credentials provisioned");
-    
-    LOG_INF("Step 6.4: Setting LTE system mode...");
-    lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_LTEM, LTE_LC_SYSTEM_MODE_PREFER_AUTO);
-    LOG_INF("LTE system mode set");
-    
-    LOG_INF("Step 6.5: Configuring PSM...");
-    lte_lc_psm_req(false);
-    LOG_INF("PSM configured");
-    
-    LOG_INF("Step 6.6: Setting function mode...");
-    lte_lc_func_mode_set(LTE_LC_FUNC_MODE_NORMAL);
-    LOG_INF("Function mode set");
 
-    LOG_INF("Step 6.7: Connecting to LTE network...");
+    lte_lc_system_mode_set(LTE_LC_SYSTEM_MODE_LTEM, LTE_LC_SYSTEM_MODE_PREFER_AUTO);
+   
+    lte_lc_psm_req(false);
+    
+    lte_lc_func_mode_set(LTE_LC_FUNC_MODE_NORMAL);
+  
     err = lte_lc_connect_async(lte_handler);
     if (err) {
         LOG_ERR("Error in lte_lc_connect_async, error: %d", err);
         return err;
     }
-    LOG_INF("LTE connection initiated");
-
-    LOG_INF("Step 6.8: Waiting for LTE connection...");
+   
     err = k_sem_take(&lte_connected, K_SECONDS(30)); // 30 second timeout
     if (err) {
         LOG_ERR("LTE connection timeout after 30 seconds");
