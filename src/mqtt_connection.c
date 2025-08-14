@@ -271,7 +271,7 @@ static int broker_init(void)
     };
 
     
-    err = getaddrinfo(mqtt_config->broker_addr, NULL, &hints, &result);
+    err = getaddrinfo(mqtt_config.broker_addr, NULL, &hints, &result);
     if (err) {
         LOG_ERR("getaddrinfo failed: %d", err);
         return -ECHILD;
@@ -286,7 +286,7 @@ static int broker_init(void)
 
             broker4->sin_addr.s_addr = ((struct sockaddr_in *)addr->ai_addr)->sin_addr.s_addr;
             broker4->sin_family = AF_INET;
-            broker4->sin_port = htons(mqtt_config->broker_port);
+            broker4->sin_port = htons(mqtt_config.broker_port);
 
             inet_ntop(AF_INET, &broker4->sin_addr.s_addr, ipv4_addr, sizeof(ipv4_addr));
             LOG_INF("IPv4 Address found %s", ipv4_addr);
@@ -309,10 +309,10 @@ static int broker_init(void)
  */
 static const uint8_t* client_id_get(void)
 {
-    static uint8_t client_id[MAX(sizeof(mqtt_config->client_id), CLIENT_ID_LEN)];
+    static uint8_t client_id[MAX(sizeof(mqtt_config.client_id), CLIENT_ID_LEN)];
 
-    if (strlen(mqtt_config->client_id) > 0) {
-        snprintf(client_id, sizeof(client_id), "%s", mqtt_config->client_id);
+    if (strlen(mqtt_config.client_id) > 0) {
+        snprintf(client_id, sizeof(client_id), "%s", mqtt_config.client_id);
         goto exit;
     }
 
@@ -525,7 +525,7 @@ void mqtt_handle(void)
     int publish_start, publish_time, error_handling_start, error_handling_time, total_time;
 
     start_time = k_uptime_get_32();
-    k_sleep(K_MSEC(mqtt_config->publish_rate));
+    k_sleep(K_MSEC(mqtt_config.publish_rate));
 
     poll_start = k_uptime_get_32();
     ret = poll(&fds, 1, 0);
@@ -614,7 +614,7 @@ void mqtt_thread_fn(void *arg1, void *arg2, void *arg3)
         
         LOG_INF("MQTT and LTE connected: MQTT: %d, LTE: %d", mqtt_connected, lte_connected_ok);
         
-        if ((start - last_fota_check) >= ota_config->check_interval) {
+        if ((start - last_fota_check) >= ota_config.check_interval) {
             LOG_INF("Suspending MQTT publish to check FOTA...");
             
             if (fota_get_state() == FOTA_CONNECTED) {
@@ -668,7 +668,7 @@ int publish_all(void)
     else {
 
         if (topic_gps[0] != '\0') {
-            snprintf(topic, sizeof(topic), "%s%s", mqtt_config->client_id, topic_gps);
+            snprintf(topic, sizeof(topic), "%s%s", mqtt_config.client_id, topic_gps);
             err = data_publish(&client, MQTT_QOS_0_AT_MOST_ONCE,
                                (uint8_t *)json_payload, strlen(json_payload), topic);
             if (err == 0) {
@@ -684,7 +684,7 @@ int publish_all(void)
 
     if (topic_sensor[0] != '\0') {
         if (strcmp(sensor_payload, last_sensor_payload) != 0) {
-            snprintf(topic, sizeof(topic), "%s%s", mqtt_config->client_id, topic_sensor);
+            snprintf(topic, sizeof(topic), "%s%s", mqtt_config.client_id, topic_sensor);
             int sensor_err = data_publish(&client, MQTT_QOS_0_AT_MOST_ONCE,
                                (uint8_t *)sensor_payload, strlen(sensor_payload), topic);
             if (sensor_err == 0) {
@@ -705,7 +705,7 @@ int publish_all(void)
     
 
     if (publish_lte_info && topic_lte[0] != '\0') {
-        snprintf(topic, sizeof(topic), "%s%s", mqtt_config->client_id, topic_lte);
+        snprintf(topic, sizeof(topic), "%s%s", mqtt_config.client_id, topic_lte);
         int lte_err = data_publish(&client, MQTT_QOS_0_AT_MOST_ONCE,
                            (uint8_t *)json_payload_lte, strlen(json_payload_lte), topic);
         if (lte_err == 0) {

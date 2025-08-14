@@ -7,7 +7,7 @@
 LOG_MODULE_REGISTER(lte, LOG_LEVEL_INF);
 
 bool update_lte_info = false;
-char json_payload_lte[512] = "NO LTE";
+
 bool publish_lte_info = false;
 K_MUTEX_DEFINE(json_mutex);
 K_SEM_DEFINE(lte_connected, 0, 1);

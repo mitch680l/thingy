@@ -45,7 +45,7 @@ static const OperatorEntry operator_table[] = {
 extern struct k_sem lte_connected;
 extern bool update_lte_info;
 extern bool publish_lte_info;
-extern char json_payload_lte[512];
+
 
 
 void lte_handler(const struct lte_lc_evt *const evt);

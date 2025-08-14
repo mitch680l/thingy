@@ -77,6 +77,7 @@
 extern char firmware_filename[MQTT_MAX_STR_LEN];
 extern char json_payload[512];
 extern char sensor_payload[512];
+extern char json_payload_lte[512];
 extern char topic_gps[64];
 extern char topic_sensor[64];
 extern char topic_lte[64];
@@ -204,14 +205,14 @@ typedef struct {
 extern ConfigEntry entries[MAX_ENTRIES];
 extern int num_entries;
 
-extern mqtt_config_t *mqtt_config;
-extern ota_config_t *ota_config;
-extern hardware_info_t *hw_info;
-extern modem_info_t *modem_info;
-extern sensor_config_t *sensor_config;
-extern gnss_config_t *gnss_config;
-extern customer_info_t *customer_info;
-extern message_settings_t *message_settings;
+extern mqtt_config_t mqtt_config;
+extern ota_config_t ota_config;
+extern hardware_info_t hw_info;
+extern modem_info_t modem_info;
+extern sensor_config_t sensor_config;
+extern gnss_config_t gnss_config;
+extern customer_info_t customer_info;
+extern message_settings_t message_settings;
 
 void parse_encrypted_blob(void);
 const char *get_config(const char *aad);
