@@ -79,9 +79,9 @@ int download_firmware(void)
     }
 
     
-    LOG_INF("Starting firmware download from %s%s", fota_host, firmware_filename);
+    LOG_INF("Starting firmware download from %s%s", ota_config->server_addr, firmware_filename);
 
-    err = fota_download_start(fota_host, firmware_filename, SEC_TAG, 0, 0);
+    err = fota_download_start(ota_config->server_addr, firmware_filename, SEC_TAG, 0, 0);
     if (err) {
         LOG_ERR("fota_download_start() failed, err %d", err);
         return err;

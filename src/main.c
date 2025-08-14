@@ -22,6 +22,7 @@
 #include "shell_commands.h"
 #include "fota.h"
 #include "config.h"
+#include "encryption_helper.h"
 #include "../drivers/led/led_driver.h"
 LOG_MODULE_REGISTER(loop, LOG_LEVEL_INF);
 
@@ -47,10 +48,10 @@ static int init(void)
         ktd2026_blink_red_1hz();
     }
     
-    gnss_int();
+    
     parse_encrypted_blob();
-    test_decrypt_all_config_entries();
     config_init();
+    gnss_int();
     err = modem_configure();
     if (err) {
         LOG_ERR("modem_configure failed: %d", err);

@@ -5,6 +5,7 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(yes)
 
 # NORDIC SDK APP START
+target_sources(app PRIVATE src/encryption_helper.c)
 target_sources(app PRIVATE src/mqtt_connection.c)
 target_sources(app PRIVATE src/heartbeat.c)
 target_sources(app PRIVATE src/shell_commands.c)

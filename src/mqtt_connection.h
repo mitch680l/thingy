@@ -29,9 +29,9 @@ int data_publish(struct mqtt_client *c, enum mqtt_qos qos,
 
 
 
-static int publish_all(void);
-
-static void mqtt_handle(void);
+int publish_all(void);
+void mqtt_init(void);
+void mqtt_handle(void);
 void provision_cert(void);
 void provision_all_tls_credentials(void);
 

@@ -106,7 +106,7 @@ void lte_handler(const struct lte_lc_evt *const evt)
                     evt->nw_reg_status == LTE_LC_NW_REG_REGISTERED_HOME ?
                     "Connected - home network" : "Connected - roaming");
             k_sem_give(&lte_connected);
-
+            ktd2026_blink_green_1hz();
             if (current_state == FOTA_IDLE) {
                 set_state(FOTA_CONNECTED, 0);
             }

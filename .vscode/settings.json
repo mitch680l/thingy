@@ -45,7 +45,8 @@
         "shell.h": "c",
         "led_driver.h": "c",
         "test.h": "c",
-        "modem_key_mgmt.h": "c"
+        "modem_key_mgmt.h": "c",
+        "kernel.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled",
     "nrf-connect.applications": []
