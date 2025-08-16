@@ -41,6 +41,37 @@ message_settings_t msg_settings;
 ConfigEntry entries[MAX_ENTRIES];
 int num_entries = 0;
 
+void set_filename(void) {
+    const char root[] = "firmware_storage";
+    const char file[] = "zephyr_signed.bin";
+
+    char customer[MQTT_MAX_STR_LEN];
+    char device[MQTT_MAX_STR_LEN];
+    char firmware_filename[MQTT_MAX_STR_LEN * 3]; // plenty of room
+
+    // copy results immediately so we don't lose them
+    const char *cfg_val = get_config("name");
+    if (cfg_val) {
+        strncpy(customer, cfg_val, sizeof(customer));
+        customer[sizeof(customer) - 1] = '\0'; // ensure null-terminated
+    } else {
+        customer[0] = '\0';
+    }
+
+    cfg_val = get_config("mq_clid");
+    if (cfg_val) {
+        strncpy(device, cfg_val, sizeof(device));
+        device[sizeof(device) - 1] = '\0';
+    } else {
+        device[0] = '\0';
+    }
+
+    // build path
+    snprintf(firmware_filename, sizeof(firmware_filename),
+             "%s/%s/%s/%s", root, customer, device, file);
+
+    printf("Firmware filename: %s\n", firmware_filename);
+}
 
 
 int update_crc(void)
@@ -539,6 +570,10 @@ void config_init() {
     if (sys_enable_config.ota_en) {
         memset(&ota_config, 0, sizeof(ota_config));
         parse_ota_config(&ota_config);
+        if (ota_config.tls_enabled == false) {
+            strncpy(ota_config.cert_tag, "-1", sizeof(ota_config.cert_tag) - 1);
+        }
+        set_filename();
     }
     LOG_INF("OTA config parsed successfully.");
 

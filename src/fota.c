@@ -6,13 +6,8 @@
 
 #include "fota.h"
 #include "config.h"
-#ifdef CONFIG_FOTA_USE_HTTPS
 #include <nrf_socket.h>
-#define TLS_SEC_TAG 44
-#define SEC_TAG (TLS_SEC_TAG)
-#else
-#define SEC_TAG (-1)
-#endif
+
 
 enum fota_state current_state = FOTA_IDLE;
 fota_callback_t state_callback = NULL;
@@ -81,7 +76,7 @@ int download_firmware(void)
     
     LOG_INF("Starting firmware download from %s%s", ota_config.server_addr, firmware_filename);
 
-    err = fota_download_start(ota_config.server_addr, firmware_filename, SEC_TAG, 0, 0);
+    err = fota_download_start(ota_config.server_addr, firmware_filename, atoi(ota_config.cert_tag), 0, 0);
     if (err) {
         LOG_ERR("fota_download_start() failed, err %d", err);
         return err;
