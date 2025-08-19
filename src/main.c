@@ -42,11 +42,11 @@ static int init(void)
         LOG_INF("Persistent key opened successfully");
     }
 
-    const struct device *i2c = DEVICE_DT_GET(DT_NODELABEL(i2c1));
-    if (device_is_ready(i2c) &&
-        ktd2026_init(&g_ktd, i2c, 0x30) == 0) {
-        ktd2026_blink_red_1hz();
-    }
+    // const struct device *i2c = DEVICE_DT_GET(DT_NODELABEL(i2c1));
+    // if (device_is_ready(i2c) &&
+    //     ktd2026_init(&g_ktd, i2c, 0x30) == 0) {
+    //     ktd2026_blink_red_1hz();
+    // }
     
     
     parse_encrypted_blob();
