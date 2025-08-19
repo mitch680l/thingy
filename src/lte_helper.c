@@ -203,7 +203,7 @@ int modem_configure(void)
         return err;
     }
    
-    err = k_sem_take(&lte_connected, K_SECONDS(30)); // 30 second timeout
+    err = k_sem_take(&lte_connected, K_FOREVER); // 30 second timeout
     if (err) {
         LOG_ERR("LTE connection timeout after 30 seconds");
         return err;
