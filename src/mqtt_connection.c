@@ -740,12 +740,11 @@ void mqtt_thread_fn(void *arg1, void *arg2, void *arg3)
        
         // Log connection status and GNSS publish stats every 60 seconds
         if ((start - last_status_log) >= 60000) {
-            int64_t elapsed_ms = start - gnss_stats_start_time;
             uint32_t publish_rate_milliHz = 0;
             
             if (elapsed_ms > 0 && gnss_publish_success > 0) {
                 // Calculate rate in milliHz (1000 * Hz) to avoid float
-                publish_rate_milliHz = (gnss_publish_success * 1000000) / elapsed_ms;
+                publish_rate_milliHz = (gnss_publish_success * 1000000) / 60000;
             }
             
             LOG_INF("MQTT: %d, LTE: %d, GNSS: %u success, %u missed, %u.%03u Hz", 
@@ -754,7 +753,7 @@ void mqtt_thread_fn(void *arg1, void *arg2, void *arg3)
             last_status_log = start;
             gnss_publish_success = 0;
             gnss_publish_missed = 0;
-            
+
         }
        
         if ((start - last_fota_check) >= ota_config.check_interval) {
