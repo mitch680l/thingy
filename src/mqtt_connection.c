@@ -29,9 +29,10 @@ static uint8_t tx_buffer[516];
 static uint8_t payload_buf[256];
 static struct sockaddr_storage broker;
 static uint16_t packet_id;
-static int64_t stats_window_start;
-static uint32_t loop_count;
-static int64_t total_time_ms;
+
+static uint32_t gnss_publish_success = 0;
+static uint32_t gnss_publish_missed = 0;
+static int64_t gnss_stats_start_time = 0;
 LOG_MODULE_REGISTER(mqtt_conn, LOG_LEVEL_INF);
 
 bool mqtt_connected = false;
@@ -710,10 +711,7 @@ int publish_all(void)
     return err;
 }
 
-// Global GNSS publish tracking variables
-static uint32_t gnss_publish_success = 0;
-static uint32_t gnss_publish_missed = 0;
-static int64_t gnss_stats_start_time = 0;
+
 
 /**
  * @brief MQTT thread function with improved connectivity handling
