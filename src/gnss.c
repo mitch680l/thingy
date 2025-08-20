@@ -416,6 +416,15 @@ void gnss_main_loop(void) {
         }
     }
     
+    if (pvt.numSV == 0) {
+        ktd2026_blink_red_1hz_30();
+    }
+    else if (pvt.fixType >= 2) {
+        ktd2026_blink_green_1hz_30();
+    } else {
+        ktd2026_blink_yellow_1hz_30();
+    }
+
     if (read_count % 500 == 0) {
         LOG_DBG("Read stats: %d reads, %d PVT messages, rate: %d Hz, partial: %zu bytes", 
                 read_count, pvt_count, gnss_config.update_rate, partial_buffer_len);

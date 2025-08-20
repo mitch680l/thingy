@@ -44,10 +44,17 @@ static int init(void)
     }
 
     const struct device *i2c = DEVICE_DT_GET(DT_NODELABEL(i2c_bb0));
-    if (device_is_ready(i2c) &&
-        ktd2026_init(&g_ktd, i2c, 0x30) == 0) {
-        ktd2026_blink_red_1hz();
+    if (device_is_ready(i2c) && ktd2026_init(&g_ktd, i2c, 0x30) == 0 && ktd2026_init(&k_ktd, i2c, 0x31) == 0) {
+        LOG_INF("KTD2026 initialized successfully");
+        ktd2026_blink_white_1hz_30();
+        ktd2026_blink_white_1hz_31();
+    } 
+    else {
+        LOG_ERR("Failed to initialize KTD2026 LED driver");
+        return -ENODEV;
     }
+
+
     sensor_init();
     k_sleep(K_MSEC(30000)); // Wait for sensor initialization
     parse_encrypted_blob(); 

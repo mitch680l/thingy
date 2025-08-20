@@ -28,7 +28,7 @@ void lte_handler(const struct lte_lc_evt *const evt)
                     evt->nw_reg_status == LTE_LC_NW_REG_REGISTERED_HOME ?
                     "Connected - home network" : "Connected - roaming");
             k_sem_give(&lte_connected);
-            ktd2026_blink_green_1hz();
+            ktd2026_blink_green_1hz_30();
             if (current_state == FOTA_IDLE) {
                 set_state(FOTA_CONNECTED, 0);
             }
@@ -46,12 +46,12 @@ void lte_handler(const struct lte_lc_evt *const evt)
             if (current_state == FOTA_IDLE) {
                 set_state(FOTA_CONNECTED, 0);
             }
-            ktd2026_blink_green_1hz();
+            ktd2026_blink_green_1hz_30();
         } else {
             if (current_state == FOTA_DOWNLOADING) {
                 set_state(FOTA_IDLE, 0);
             }
-            ktd2026_blink_blue_1hz();
+            ktd2026_blink_yellow_1hz_30();
         }
         break;
 
@@ -73,7 +73,7 @@ void lte_handler(const struct lte_lc_evt *const evt)
             if (current_state == FOTA_CONNECTED || current_state == FOTA_DOWNLOADING) {
                 set_state(FOTA_IDLE, 0);
             }
-            ktd2026_blink_red_1hz();
+            ktd2026_blink_red_1hz_30();
             break;
         default:
             LOG_INF("LTE mode updated: Unknown");

@@ -7,7 +7,7 @@
 #include "fota.h"
 #include "config.h"
 #include <nrf_socket.h>
-
+#include "heartbeat.h"
 
 enum fota_state current_state = FOTA_IDLE;
 fota_callback_t state_callback = NULL;
@@ -82,6 +82,8 @@ int download_firmware(void)
         return err;
     }
 
+    ktd2026_blink_blue_1hz_30();
+    
     return 0;
 }
 

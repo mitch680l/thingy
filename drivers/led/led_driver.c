@@ -12,6 +12,7 @@
 
 
 struct ktd2026_device g_ktd;
+struct ktd2026_device k_ktd;
 
 int ktd2026_init(struct ktd2026_device *ktd_dev, const struct device *i2c_dev, uint16_t i2c_addr)
 {
