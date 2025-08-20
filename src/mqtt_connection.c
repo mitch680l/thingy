@@ -610,58 +610,52 @@ void mqtt_handle(void)
  */
 void mqtt_thread_fn(void *arg1, void *arg2, void *arg3)
 {
-    int64_t last_fota_check = 0;
-    int64_t stats_window_start = k_uptime_get();
+    int64_t last_fota_check = k_uptime_get();
+    int64_t last_status_log = k_uptime_get();
     uint32_t loop_count = 0;
-    int64_t total_time_ms = 0;
-
+    
     while (1) {
         int64_t start = k_uptime_get();
-
-        LOG_INF("MQTT and LTE connected: MQTT: %d, LTE: %d",
-                mqtt_connected, lte_connected_ok);
-
-        /* Periodic FOTA check */
+        enum lte_lc_nw_reg_status reg_status;
+        int lte_err = lte_lc_nw_reg_status_get(&reg_status);
+        bool lte_connected_ok = (lte_err == 0) && (reg_status == LTE_LC_NW_REG_REGISTERED_HOME ||  reg_status == LTE_LC_NW_REG_REGISTERED_ROAMING);
+       
+        if (!lte_connected_ok) {
+            LOG_WRN("LTE not connected: status=%d, err=%d", reg_status, lte_err);
+            mqtt_connected = false;
+            k_sem_take(&lte_connected, K_FOREVER);
+            continue;
+        }
+       
+        // Log connection status and loop count every 60 seconds
+        if ((start - last_status_log) >= 60000) {
+            LOG_INF("MQTT and LTE connected: MQTT: %d, LTE: %d, Publish count: %u", 
+                   mqtt_connected, lte_connected_ok, loop_count);
+            last_status_log = start;
+        }
+       
         if ((start - last_fota_check) >= ota_config.check_interval) {
             LOG_INF("Suspending MQTT publish to check FOTA...");
-
+           
             if (fota_get_state() == FOTA_CONNECTED) {
                 check_fota_server();
             } else {
-                LOG_INF("LTE not connected, skipping FOTA check.");
+                LOG_DBG("LTE not connected, skipping FOTA check.");
             }
-
+           
             last_fota_check = start;
         }
-
-        /* Skip MQTT work if FOTA downloading */
         if (fota_get_state() == FOTA_DOWNLOADING) {
-            LOG_INF("FOTA download in progress, skipping MQTT publish.");
+            LOG_DBG("FOTA download in progress, skipping MQTT publish.");
             k_sleep(K_SECONDS(1));
             continue;
         }
-
-        /* Normal MQTT handling */
+       
         mqtt_handle();
-
-        int64_t end = k_uptime_get();
-        int64_t elapsed = end - start;
-
-        /* accumulate stats */
-        total_time_ms += elapsed;
         loop_count++;
-
-        /* print average once per 60s */
-        if ((end - stats_window_start) >= 60000) {
-            if (loop_count > 0) {
-                int avg = (int)(total_time_ms / loop_count);
-                LOG_INF("MQTT loop avg: %d ms over %u iterations",
-                        avg, loop_count);
-            }
-            stats_window_start = end;
-            loop_count = 0;
-            total_time_ms = 0;
-        }
+       
+        int64_t end = k_uptime_get();
+        LOG_DBG("MQTT Thread Took: %d ms", (int)(end - start));
     }
 }
 static int publish_sensor(const char *sensor_name,
