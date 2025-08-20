@@ -34,6 +34,7 @@ struct ktd2026_device {
     uint16_t i2c_addr;
 };
 extern struct ktd2026_device g_ktd;
+extern struct ktd2026_device k_ktd;
 
 //
 // ┌────────────────────────────┐

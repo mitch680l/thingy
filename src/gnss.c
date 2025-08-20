@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include "config.h"
-
+#include "heartbeat.h"
 
 struct gps_rate_config {
     uint8_t rate_hz;
@@ -415,7 +415,7 @@ void gnss_main_loop(void) {
             }
         }
     }
-    
+
     if (pvt.numSV == 0) {
         ktd2026_blink_red_1hz_30();
     }
