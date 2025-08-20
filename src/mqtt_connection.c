@@ -752,6 +752,9 @@ void mqtt_thread_fn(void *arg1, void *arg2, void *arg3)
                    mqtt_connected, lte_connected_ok, gnss_publish_success, 
                    gnss_publish_missed, publish_rate_milliHz / 1000, publish_rate_milliHz % 1000);
             last_status_log = start;
+            gnss_publish_success = 0;
+            gnss_publish_missed = 0;
+            
         }
        
         if ((start - last_fota_check) >= ota_config.check_interval) {

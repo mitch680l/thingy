@@ -405,7 +405,7 @@ void gnss_main_loop(void) {
                 actual_rate = fix_count_in_period / 10.0;
                 LOG_INF("GPS Rate: %.1f Hz (target: %d Hz, fixes: %d, total: %d)", 
                         actual_rate, gnss_config.update_rate, fix_count_in_period, pvt_count);
-                
+                pvt_count = 0;
                 fix_rate_start_time = current_time;
                 fix_count_in_period = 0;
             }
@@ -417,12 +417,12 @@ void gnss_main_loop(void) {
     }
 
     if (pvt.numSV == 0) {
-        ktd2026_blink_red_1hz_30();
+        ktd2026_blink_red_1hz_31();
     }
     else if (pvt.fixType >= 2) {
-        ktd2026_blink_green_1hz_30();
+        ktd2026_blink_green_1hz_31();
     } else {
-        ktd2026_blink_yellow_1hz_30();
+        ktd2026_blink_yellow_1hz_31();
     }
 
     if (read_count % 500 == 0) {
