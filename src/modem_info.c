@@ -58,7 +58,7 @@ void pack_lte_data(void)
     char lte_cell_id[LTE_BUF_LEN] = "unknown";
     const char *lte_operator_decoded;
 
-    LOG_INF("Preparing to pack LTE data");
+    //LOG_INF("Preparing to pack LTE data");
 
     ret = modem_info_init();
     if (ret < 0) {
