@@ -27,7 +27,7 @@ extern struct ktd2026_device k_ktd;
 
 
 
-static void ktd2026_blink_common_init(struct ktd2026 *dev)
+static void ktd2026_blink_common_init(struct ktd2026_device *dev)
 {
     static bool initialized_30 = false;
     static bool initialized_31 = false;
@@ -65,7 +65,7 @@ static void ktd2026_blink_common_init(struct ktd2026 *dev)
 /* ============================================================
  *  Core blink programming
  * ============================================================ */
-static void ktd2026_program_1hz_pwm1(struct ktd2026 *dev, uint8_t reg4_map)
+static void ktd2026_program_1hz_pwm1(struct ktd2026_device *dev, uint8_t reg4_map)
 {
     ktd2026_blink_common_init(dev);
     (void)ktd2026_write_channel_ctrl(dev, reg4_map);
@@ -76,7 +76,7 @@ static void ktd2026_program_1hz_pwm1(struct ktd2026 *dev, uint8_t reg4_map)
  * ============================================================ */
 #define CH_ON(x)  ((x) ? KTD_CH_MODE_PWM1 : KTD_CH_MODE_OFF)
 
-static void ktd2026_blink_color(struct ktd2026 *dev,
+static void ktd2026_blink_color(struct ktd2026_device *dev,
                                 bool r, bool g, bool b)
 {
     uint8_t reg4 = KTD_REG4(CH_ON(r), CH_ON(g), CH_ON(b));
@@ -86,23 +86,23 @@ static void ktd2026_blink_color(struct ktd2026 *dev,
 /* ============================================================
  *  Public API for 0x30 device
  * ============================================================ */
-void ktd2026_blink_red_1hz_30(void)    { ktd2026_blink_color(&g_ktd_30, true,  false, false); }
-void ktd2026_blink_green_1hz_30(void)  { ktd2026_blink_color(&g_ktd_30, false, true,  false); }
-void ktd2026_blink_blue_1hz_30(void)   { ktd2026_blink_color(&g_ktd_30, false, false, true ); }
+void ktd2026_blink_red_1hz_30(void)    { ktd2026_blink_color(&g_ktd, true,  false, false); }
+void ktd2026_blink_green_1hz_30(void)  { ktd2026_blink_color(&g_ktd, false, true,  false); }
+void ktd2026_blink_blue_1hz_30(void)   { ktd2026_blink_color(&g_ktd, false, false, true ); }
 
-void ktd2026_blink_yellow_1hz_30(void) { ktd2026_blink_color(&g_ktd_30, true,  true,  false); }
-void ktd2026_blink_cyan_1hz_30(void)   { ktd2026_blink_color(&g_ktd_30, false, true,  true ); }
-void ktd2026_blink_magenta_1hz_30(void){ ktd2026_blink_color(&g_ktd_30, true,  false, true ); }
-void ktd2026_blink_white_1hz_30(void)  { ktd2026_blink_color(&g_ktd_30, true,  true,  true ); }
+void ktd2026_blink_yellow_1hz_30(void) { ktd2026_blink_color(&g_ktd, true,  true,  false); }
+void ktd2026_blink_cyan_1hz_30(void)   { ktd2026_blink_color(&g_ktd, false, true,  true ); }
+void ktd2026_blink_magenta_1hz_30(void){ ktd2026_blink_color(&g_ktd, true,  false, true ); }
+void ktd2026_blink_white_1hz_30(void)  { ktd2026_blink_color(&g_ktd, true,  true,  true ); }
 
 /* ============================================================
  *  Public API for 0x31 device
  * ============================================================ */
-void ktd2026_blink_red_1hz_31(void)    { ktd2026_blink_color(&g_ktd_31, true,  false, false); }
-void ktd2026_blink_green_1hz_31(void)  { ktd2026_blink_color(&g_ktd_31, false, true,  false); }
-void ktd2026_blink_blue_1hz_31(void)   { ktd2026_blink_color(&g_ktd_31, false, false, true ); }
+void ktd2026_blink_red_1hz_31(void)    { ktd2026_blink_color(&k_ktd, true,  false, false); }
+void ktd2026_blink_green_1hz_31(void)  { ktd2026_blink_color(&k_ktd, false, true,  false); }
+void ktd2026_blink_blue_1hz_31(void)   { ktd2026_blink_color(&k_ktd, false, false, true ); }
 
-void ktd2026_blink_yellow_1hz_31(void) { ktd2026_blink_color(&g_ktd_31, true,  true,  false); }
-void ktd2026_blink_cyan_1hz_31(void)   { ktd2026_blink_color(&g_ktd_31, false, true,  true ); }
-void ktd2026_blink_magenta_1hz_31(void){ ktd2026_blink_color(&g_ktd_31, true,  false, true ); }
-void ktd2026_blink_white_1hz_31(void)  { ktd2026_blink_color(&g_ktd_31, true,  true,  true ); }
+void ktd2026_blink_yellow_1hz_31(void) { ktd2026_blink_color(&k_ktd, true,  true,  false); }
+void ktd2026_blink_cyan_1hz_31(void)   { ktd2026_blink_color(&k_ktd, false, true,  true ); }
+void ktd2026_blink_magenta_1hz_31(void){ ktd2026_blink_color(&k_ktd, true,  false, true ); }
+void ktd2026_blink_white_1hz_31(void)  { ktd2026_blink_color(&k_ktd, true,  true,  true ); }
