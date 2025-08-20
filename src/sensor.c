@@ -48,9 +48,9 @@ static void sensor_work_handler(struct k_work *work)
     build_json_iis2mdc();
     build_json_icm42688();
 
-    printk("%s\n", json_bmp390);
-    printk("%s\n", json_iis2mdc);
-    printk("%s\n", json_icm42688);
+    //printk("%s\n", json_bmp390);
+    //printk("%s\n", json_iis2mdc);
+    //printk("%s\n", json_icm42688);
 
     /* Re-schedule after 30 seconds */
     k_work_schedule(&sensor_work, K_SECONDS(30));

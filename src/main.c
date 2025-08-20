@@ -58,6 +58,7 @@ static int init(void)
         LOG_ERR("modem_configure failed: %d", err);
         return err;
     }
+    lte_data_start();
     mqtt_init();
 
     return 0;
