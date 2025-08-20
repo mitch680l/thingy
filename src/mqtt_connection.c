@@ -529,6 +529,33 @@ int mqtt_reconnect(struct mqtt_client *client,
 }
 
 
+static int publish_sensor(const char *sensor_name,
+                          char *payload, char *last_payload)
+{
+    char topic[200];
+    int err = 0;
+
+    if (strcmp(payload, last_payload) == 0) {
+        LOG_DBG("No new %s data since last publish", sensor_name);
+        return 0;
+    }
+
+    snprintf(topic, sizeof(topic), "%s/sensor/%s",
+             mqtt_config.client_id, sensor_name);
+
+    err = data_publish(&client, mqtt_config.qos,
+                       (uint8_t *)payload, strlen(payload), topic);
+
+    if (err == 0) {
+        memcpy(last_payload, payload, JSON_BUF_SIZE);
+        //LOG_INF("Published %s data", sensor_name);
+    } else {
+        LOG_ERR("Failed to publish %s data: %d", sensor_name, err);
+    }
+
+    return err;
+}
+
 /**
  * @brief Handle MQTT operations including polling and publishing
  */
@@ -606,86 +633,6 @@ void mqtt_handle(void)
 }
 
 /**
- * @brief MQTT thread function with improved connectivity handling
- */
-void mqtt_thread_fn(void *arg1, void *arg2, void *arg3)
-{
-    int64_t last_fota_check = k_uptime_get();
-    int64_t last_status_log = k_uptime_get();
-    uint32_t loop_count = 0;
-    
-    while (1) {
-        int64_t start = k_uptime_get();
-        enum lte_lc_nw_reg_status reg_status;
-        int lte_err = lte_lc_nw_reg_status_get(&reg_status);
-        bool lte_connected_ok = (lte_err == 0) && (reg_status == LTE_LC_NW_REG_REGISTERED_HOME ||  reg_status == LTE_LC_NW_REG_REGISTERED_ROAMING);
-       
-        if (!lte_connected_ok) {
-            LOG_WRN("LTE not connected: status=%d, err=%d", reg_status, lte_err);
-            mqtt_connected = false;
-            k_sem_take(&lte_connected, K_FOREVER);
-            continue;
-        }
-       
-        // Log connection status and loop count every 60 seconds
-        if ((start - last_status_log) >= 60000) {
-            LOG_INF("MQTT and LTE connected: MQTT: %d, LTE: %d, Publish count: %u", 
-                   mqtt_connected, lte_connected_ok, loop_count);
-            last_status_log = start;
-        }
-       
-        if ((start - last_fota_check) >= ota_config.check_interval) {
-            LOG_INF("Suspending MQTT publish to check FOTA...");
-           
-            if (fota_get_state() == FOTA_CONNECTED) {
-                check_fota_server();
-            } else {
-                LOG_DBG("LTE not connected, skipping FOTA check.");
-            }
-           
-            last_fota_check = start;
-        }
-        if (fota_get_state() == FOTA_DOWNLOADING) {
-            LOG_DBG("FOTA download in progress, skipping MQTT publish.");
-            k_sleep(K_SECONDS(1));
-            continue;
-        }
-       
-        mqtt_handle();
-        loop_count++;
-       
-        int64_t end = k_uptime_get();
-        LOG_DBG("MQTT Thread Took: %d ms", (int)(end - start));
-    }
-}
-static int publish_sensor(const char *sensor_name,
-                          char *payload, char *last_payload)
-{
-    char topic[200];
-    int err = 0;
-
-    if (strcmp(payload, last_payload) == 0) {
-        LOG_DBG("No new %s data since last publish", sensor_name);
-        return 0;
-    }
-
-    snprintf(topic, sizeof(topic), "%s/sensor/%s",
-             mqtt_config.client_id, sensor_name);
-
-    err = data_publish(&client, mqtt_config.qos,
-                       (uint8_t *)payload, strlen(payload), topic);
-
-    if (err == 0) {
-        memcpy(last_payload, payload, JSON_BUF_SIZE);
-        //LOG_INF("Published %s data", sensor_name);
-    } else {
-        LOG_ERR("Failed to publish %s data: %d", sensor_name, err);
-    }
-
-    return err;
-}
-
-/**
  * @brief Publish all pending data to MQTT broker
  */
 int publish_all(void)
@@ -700,6 +647,8 @@ int publish_all(void)
     /* ---- GNSS ---- */
     if (strcmp(json_payload, last_payload) == 0) {
         LOG_WRN("No new GNSS fix since last publish!");
+        gnss_publish_missed++;  // Count missed GNSS publish
+        
         lte_lc_nw_reg_status_get(&status);
 
         if (status != LTE_LC_NW_REG_REGISTERED_HOME || !mqtt_connected) {
@@ -718,12 +667,15 @@ int publish_all(void)
                                strlen(json_payload), topic);
             if (err == 0) {
                 memcpy(last_payload, json_payload, sizeof(json_payload));
+                gnss_publish_success++;  // Count successful GNSS publish
                 //LOG_INF("Published GNSS data");
             } else {
                 LOG_ERR("Failed to publish GPS data: %d", err);
+                // Don't count as success or missed - this is an error case
             }
         } else {
-            LOG_WRN("GPS topic not configured, skipping GPS publish");
+            //LOG_WRN("GPS topic not configured, skipping GPS publish");
+            // Don't count this case as it's a configuration issue
         }
     }
 
@@ -759,6 +711,76 @@ int publish_all(void)
     return err;
 }
 
+// Global GNSS publish tracking variables
+static uint32_t gnss_publish_success = 0;
+static uint32_t gnss_publish_missed = 0;
+static int64_t gnss_stats_start_time = 0;
+
+/**
+ * @brief MQTT thread function with improved connectivity handling
+ */
+void mqtt_thread_fn(void *arg1, void *arg2, void *arg3)
+{
+    int64_t last_fota_check = k_uptime_get();
+    int64_t last_status_log = k_uptime_get();
+    uint32_t loop_count = 0;
+    
+    // Initialize GNSS stats timing
+    gnss_stats_start_time = k_uptime_get();
+    
+    while (1) {
+        int64_t start = k_uptime_get();
+        enum lte_lc_nw_reg_status reg_status;
+        int lte_err = lte_lc_nw_reg_status_get(&reg_status);
+        bool lte_connected_ok = (lte_err == 0) && (reg_status == LTE_LC_NW_REG_REGISTERED_HOME ||  reg_status == LTE_LC_NW_REG_REGISTERED_ROAMING);
+       
+        if (!lte_connected_ok) {
+            LOG_WRN("LTE not connected: status=%d, err=%d", reg_status, lte_err);
+            mqtt_connected = false;
+            k_sem_take(&lte_connected, K_FOREVER);
+            continue;
+        }
+       
+        // Log connection status and GNSS publish stats every 60 seconds
+        if ((start - last_status_log) >= 60000) {
+            int64_t elapsed_ms = start - gnss_stats_start_time;
+            uint32_t publish_rate_milliHz = 0;
+            
+            if (elapsed_ms > 0 && gnss_publish_success > 0) {
+                // Calculate rate in milliHz (1000 * Hz) to avoid float
+                publish_rate_milliHz = (gnss_publish_success * 1000000) / elapsed_ms;
+            }
+            
+            LOG_INF("MQTT: %d, LTE: %d, GNSS: %u success, %u missed, %u.%03u Hz", 
+                   mqtt_connected, lte_connected_ok, gnss_publish_success, 
+                   gnss_publish_missed, publish_rate_milliHz / 1000, publish_rate_milliHz % 1000);
+            last_status_log = start;
+        }
+       
+        if ((start - last_fota_check) >= ota_config.check_interval) {
+            LOG_INF("Suspending MQTT publish to check FOTA...");
+           
+            if (fota_get_state() == FOTA_CONNECTED) {
+                check_fota_server();
+            } else {
+                LOG_DBG("LTE not connected, skipping FOTA check.");
+            }
+           
+            last_fota_check = start;
+        }
+        if (fota_get_state() == FOTA_DOWNLOADING) {
+            LOG_DBG("FOTA download in progress, skipping MQTT publish.");
+            k_sleep(K_SECONDS(1));
+            continue;
+        }
+       
+        mqtt_handle();
+        loop_count++;
+       
+        int64_t end = k_uptime_get();
+        LOG_DBG("MQTT Thread Took: %d ms", (int)(end - start));
+    }
+}
 
 /**
  * @brief Initialize MQTT connection and start thread
