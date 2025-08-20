@@ -646,7 +646,7 @@ int publish_all(void)
 
     /* ---- GNSS ---- */
     if (strcmp(json_payload, last_payload) == 0) {
-        LOG_WRN("No new GNSS fix since last publish!");
+        //LOG_WRN("No new GNSS fix since last publish!");
         gnss_publish_missed++;  // Count missed GNSS publish
         
         lte_lc_nw_reg_status_get(&status);
@@ -674,8 +674,7 @@ int publish_all(void)
                 // Don't count as success or missed - this is an error case
             }
         } else {
-            //LOG_WRN("GPS topic not configured, skipping GPS publish");
-            // Don't count this case as it's a configuration issue
+            LOG_WRN("GPS topic not configured, skipping GPS publish");
         }
     }
 
