@@ -420,9 +420,9 @@ void gnss_main_loop(void) {
         ktd2026_blink_red_1hz_31();
     }
     else if (pvt.fixType >= 2) {
-        ktd2026_blink_green_1hz_31();
+        ktd2026_blink_magenta_1hz_31();
     } else {
-        ktd2026_blink_yellow_1hz_31();
+        ktd2026_blink_cyan_1hz_31();
     }
 
     if (read_count % 500 == 0) {
