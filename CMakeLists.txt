@@ -16,4 +16,6 @@ target_sources(app PRIVATE src/lte_helper.c)
 target_sources(app PRIVATE src/fota.c)
 target_sources(app PRIVATE drivers/led/led_driver.c)
 target_sources(app PRIVATE src/pem_command.c)
+target_sources(app PRIVATE src/sensor.c)
+target_sources(app PRIVATE src/modem_info.c)
 # NORDIC SDK APP END

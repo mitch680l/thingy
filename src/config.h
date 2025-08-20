@@ -22,7 +22,7 @@
 #define MQTT_MAX_STR_LEN 128
 #define MQTT_THREAD_STACK_SIZE 2048
 #define MQTT_THREAD_PRIORITY 1
-#define JSON_BUF_SIZE 516
+#define JSON_BUF_SIZE 200
 #define BAD_PUBLISH_LIMIT 5
 #define MQTT_RECONNECT_DELAY_SEC 10
 
@@ -66,7 +66,9 @@
 #define AES_KEY_SIZE (32) 
 #define DECRYPTED_OUTPUT_MAX 256
 
-
+// MODEM INFO
+#define LTE_DATA_INTERVAL  K_SECONDS(60)  
+#define LTE_BUF_LEN 32
 
 #define MAX_TRIES        3
 #define LOCKOUT_MS       30000     
@@ -75,14 +77,15 @@
 #define MAX_BLOB (8 * 1024) 
 #define PBKDF2_ITERATIONS 64000u
 extern char firmware_filename[MQTT_MAX_STR_LEN];
-extern char json_payload[512];
-extern char sensor_payload[512];
-extern char json_payload_lte[512];
+extern char json_payload[JSON_BUF_SIZE];
+extern char sensor_payload[JSON_BUF_SIZE];
+extern char json_payload_lte[JSON_BUF_SIZE];
 extern char topic_gps[64];
 extern char topic_sensor[64];
 extern char topic_lte[64];
-
-
+extern char json_bmp390[JSON_BUF_SIZE];
+extern char json_iis2mdc[JSON_BUF_SIZE];
+extern char json_icm42688[JSON_BUF_SIZE];
 extern struct mqtt_utf8 struct_pass;
 extern struct mqtt_utf8 struct_user;
 

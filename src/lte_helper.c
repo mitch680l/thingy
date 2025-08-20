@@ -6,90 +6,12 @@
 #include "config.h"
 LOG_MODULE_REGISTER(lte, LOG_LEVEL_INF);
 
-bool update_lte_info = false;
 
-bool publish_lte_info = false;
 K_MUTEX_DEFINE(json_mutex);
 K_SEM_DEFINE(lte_connected, 0, 1);
-/**
- * @brief Look up operator name by MCC/MNC code
- */
-const char *lookup_operator_name(const char *mccmnc)
-{
-    if (mccmnc == NULL || strlen(mccmnc) < 5) {
-        return "Invalid Operator Code";
-    }
 
-    for (int i = 0; i < sizeof(operator_table) / sizeof(operator_table[0]); i++) {
-        if (strcmp(operator_table[i].mccmnc, mccmnc) == 0) {
-            return operator_table[i].name;
-        }
-    }
-    return "Unknown Operator";
-}
 
-/**
- * @brief Pack LTE data into JSON format
- */
-void pack_lte_data(void)
-{
-    int ret, len;
-    char lte_rsp[20] = "unknown";
-    char lte_area[20] = "unknown";
-    char lte_operator[20] = "unknown";
-    char lte_cell_id[20] = "unknown";
-    const char *lte_operator_decoded;
 
-    LOG_INF("Preparing to pack LTE data");
-
-    ret = modem_info_init();
-    if (ret < 0) {
-        LOG_ERR("Failed to initialize modem info: %d", ret);
-        return;
-    }
-
-    ret = modem_info_string_get(MODEM_INFO_RSRP, lte_rsp, sizeof(lte_rsp));
-    if (ret < 0) {
-        LOG_ERR("Failed to get LTE RSRP: %d", ret);
-    }
-
-    ret = modem_info_string_get(MODEM_INFO_AREA_CODE, lte_area, sizeof(lte_area));
-    if (ret < 0) {
-        LOG_ERR("Failed to get tracking area code: %d", ret);
-    }
-
-    ret = modem_info_string_get(MODEM_INFO_OPERATOR, lte_operator, sizeof(lte_operator));
-    if (ret < 0) {
-        LOG_ERR("Failed to get operator: %d", ret);
-    }
-
-    lte_operator_decoded = lookup_operator_name(lte_operator);
-
-    ret = modem_info_string_get(MODEM_INFO_CELLID, lte_cell_id, sizeof(lte_cell_id));
-    if (ret < 0) {
-        LOG_ERR("Failed to get cell ID: %d", ret);
-    }
-
-    len = snprintf(json_payload_lte, sizeof(json_payload_lte),
-        "{"
-          "\"RSRP\":\"%s\","
-          "\"AreaCode\":\"%s\","
-          "\"Operator\":\"%s\","
-          "\"CellID\":\"%s\""
-        "}",
-        lte_rsp,
-        lte_area,
-        lte_operator_decoded,
-        lte_cell_id
-    );
-
-    if (len < 0) {
-        LOG_ERR("Failed to format LTE JSON: %d", len);
-        return;
-    } else if ((size_t)len >= sizeof(json_payload_lte)) {
-        LOG_WRN("LTE JSON truncated (%d bytes needed)", len);
-    }
-}
 
 /**
  * @brief LTE event handler
@@ -106,7 +28,7 @@ void lte_handler(const struct lte_lc_evt *const evt)
                     evt->nw_reg_status == LTE_LC_NW_REG_REGISTERED_HOME ?
                     "Connected - home network" : "Connected - roaming");
             k_sem_give(&lte_connected);
-            //ktd2026_blink_green_1hz();
+            ktd2026_blink_green_1hz();
             if (current_state == FOTA_IDLE) {
                 set_state(FOTA_CONNECTED, 0);
             }
@@ -124,19 +46,18 @@ void lte_handler(const struct lte_lc_evt *const evt)
             if (current_state == FOTA_IDLE) {
                 set_state(FOTA_CONNECTED, 0);
             }
-            //ktd2026_blink_green_1hz();
+            ktd2026_blink_green_1hz();
         } else {
             if (current_state == FOTA_DOWNLOADING) {
                 set_state(FOTA_IDLE, 0);
             }
-            //ktd2026_blink_blue_1hz();
+            ktd2026_blink_blue_1hz();
         }
         break;
 
     case LTE_LC_EVT_CELL_UPDATE:
         LOG_INF("LTE cell changed: Cell ID: %d, Tracking area: %d",
                 evt->cell.id, evt->cell.tac);
-        update_lte_info = true;
         break;
 
     case LTE_LC_EVT_LTE_MODE_UPDATE:
@@ -152,7 +73,7 @@ void lte_handler(const struct lte_lc_evt *const evt)
             if (current_state == FOTA_CONNECTED || current_state == FOTA_DOWNLOADING) {
                 set_state(FOTA_IDLE, 0);
             }
-            //ktd2026_blink_red_1hz();
+            ktd2026_blink_red_1hz();
             break;
         default:
             LOG_INF("LTE mode updated: Unknown");

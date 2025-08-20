@@ -17,12 +17,17 @@
 #include "encryption_helper.h"
 
 LOG_MODULE_REGISTER(configuration, LOG_LEVEL_INF);
-char json_payload[512] = "NO PVT";
-char sensor_payload[512] = "NO SENSOR DATA";
-char json_payload_lte[512] = "NO LTE";
+char json_payload[JSON_BUF_SIZE] = "NO PVT";
+char sensor_payload[JSON_BUF_SIZE] = "NO SENSOR DATA";
+char json_payload_lte[JSON_BUF_SIZE] = "NO LTE";
+char json_bmp390[JSON_BUF_SIZE] = "NO BMP390 DATA";
+char json_iis2mdc[JSON_BUF_SIZE] = "NO IIS2MDC DATA";
+char json_icm42688[JSON_BUF_SIZE] = "NO ICM42688 DATA";
 char topic_gps[64] = "/gps";
 char topic_sensor[64] = "/sensor";
 char topic_lte[64] = "/lte";
+char pwd[64] = "Kalscott123";
+char usr[64] = "admin";
 char firmware_filename[MQTT_MAX_STR_LEN] = "firmware.bin";
 struct mqtt_utf8 struct_pass;
 struct mqtt_utf8 struct_user;
@@ -560,11 +565,12 @@ void config_init() {
     if (sys_enable_config.mqtt_en) {
         memset(&mqtt_config, 0, sizeof(mqtt_config));
         parse_mqtt_config(&mqtt_config);
-        struct_pass.utf8 = mqtt_config.password;
-        struct_pass.size = strlen(mqtt_config.password);
-        struct_user.utf8 = mqtt_config.username;
-        struct_user.size = strlen(mqtt_config.username);
+        struct_pass.utf8 = pwd;
+        struct_pass.size = strlen(pwd);
+        struct_user.utf8 = usr;
+        struct_user.size = strlen(usr);
     }
+
     LOG_INF("MQTT config parsed successfully.");
 
     if (sys_enable_config.ota_en) {

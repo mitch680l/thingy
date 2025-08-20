@@ -60,6 +60,5 @@ void gnss_main_loop();
 void gnss_int();
 
 
-extern char json_payload[512];
 extern struct k_mutex json_mutex;
 #endif

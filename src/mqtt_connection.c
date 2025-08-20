@@ -36,7 +36,9 @@ bool mqtt_connected = false;
 
 
 
-
+static char last_bmp390[JSON_BUF_SIZE]  = {0};
+static char last_iis2mdc[JSON_BUF_SIZE] = {0};
+static char last_icm42688[JSON_BUF_SIZE]= {0};
 
 void provision_all_tls_credentials(void)
 {
@@ -270,7 +272,7 @@ static int broker_init(void)
         .ai_socktype = SOCK_STREAM
     };
 
-    
+    LOG_INF("Initializing broker connection to %s:%d", mqtt_config.broker_addr, mqtt_config.broker_port);
     err = getaddrinfo(mqtt_config.broker_addr, NULL, &hints, &result);
     if (err) {
         LOG_ERR("getaddrinfo failed: %d", err);
@@ -351,6 +353,10 @@ int client_init(struct mqtt_client *client)
         return err;
     }
 
+    LOG_INF("MQTT password: %s", mqtt_config.password);
+    LOG_INF("MQTT username: %s", mqtt_config.username);
+    LOG_INF("Stored MQTT password: %s", struct_pass.utf8);
+    LOG_INF("Stored MQTT username: %s", struct_user.utf8);
     client->broker = &broker;
     client->evt_cb = mqtt_evt_handler;
     client->client_id.utf8 = client_id_get();
@@ -364,6 +370,10 @@ int client_init(struct mqtt_client *client)
     client->tx_buf = tx_buffer;
     client->tx_buf_size = sizeof(tx_buffer);
 
+    /*
+    Implment config option to turn on/off tls
+    */
+    if (mqtt_config.tls_enabled) {
     tls_cfg = &(client->transport).tls.config;
     LOG_INF("TLS enabled");
     client->transport.type = MQTT_TRANSPORT_SECURE;
@@ -374,7 +384,10 @@ int client_init(struct mqtt_client *client)
     tls_cfg->sec_tag_list = sec_tag_list;
     tls_cfg->hostname = NULL;
     tls_cfg->session_cache = 0;
-    
+    }
+    else {
+        client->transport.type = MQTT_TRANSPORT_NON_SECURE;
+    }
     return err;
 }
 
@@ -638,41 +651,67 @@ void mqtt_thread_fn(void *arg1, void *arg2, void *arg3)
         LOG_INF("MQTT Thread Took: %d ms", (int)(end - start));
     }
 }
+static int publish_sensor(const char *sensor_name,
+                          char *payload, char *last_payload)
+{
+    char topic[200];
+    int err = 0;
+
+    if (strcmp(payload, last_payload) == 0) {
+        LOG_DBG("No new %s data since last publish", sensor_name);
+        return 0;
+    }
+
+    snprintf(topic, sizeof(topic), "%s/sensor/%s",
+             mqtt_config.client_id, sensor_name);
+
+    err = data_publish(&client, mqtt_config.qos,
+                       (uint8_t *)payload, strlen(payload), topic);
+
+    if (err == 0) {
+        memcpy(last_payload, payload, JSON_BUF_SIZE);
+        LOG_INF("Published %s data", sensor_name);
+    } else {
+        LOG_ERR("Failed to publish %s data: %d", sensor_name, err);
+    }
+
+    return err;
+}
 
 /**
  * @brief Publish all pending data to MQTT broker
  */
 int publish_all(void)
 {
-    static int err = 0;
-    static char topic[200];
-    static char last_payload[sizeof(json_payload)] = {0};
-    static char last_sensor_payload[sizeof(sensor_payload)] = {0};
+    int err = 0;
+    char topic[200];
+    static char last_payload[sizeof(json_payload)] = {0};  /* GNSS */
     enum lte_lc_nw_reg_status status;
-    
+
     k_mutex_lock(&json_mutex, K_FOREVER);
-    
+
+    /* ---- GNSS ---- */
     if (strcmp(json_payload, last_payload) == 0) {
         LOG_WRN("No new GNSS fix since last publish!");
         lte_lc_nw_reg_status_get(&status);
-       
+
         if (status != LTE_LC_NW_REG_REGISTERED_HOME || !mqtt_connected) {
             LOG_WRN("Not connected to LTE or MQTT");
             k_mutex_unlock(&json_mutex);
             return -ENOTCONN;
         } else {
-            err = 0;
-            mqtt_live(&client);
+            mqtt_live(&client); /* Keep alive */
         }
-    }
-    else {
-
+    } else {
         if (topic_gps[0] != '\0') {
-            snprintf(topic, sizeof(topic), "%s%s", mqtt_config.client_id, topic_gps);
-            err = data_publish(&client, MQTT_QOS_0_AT_MOST_ONCE,
-                               (uint8_t *)json_payload, strlen(json_payload), topic);
+            snprintf(topic, sizeof(topic), "%s%s",
+                     mqtt_config.client_id, topic_gps);
+            err = data_publish(&client, mqtt_config.qos,
+                               (uint8_t *)json_payload,
+                               strlen(json_payload), topic);
             if (err == 0) {
                 memcpy(last_payload, json_payload, sizeof(json_payload));
+                LOG_INF("Published GNSS data");
             } else {
                 LOG_ERR("Failed to publish GPS data: %d", err);
             }
@@ -681,35 +720,25 @@ int publish_all(void)
         }
     }
 
+    /* ---- Sensor data (3 separate JSON payloads) ---- */
+    int sensor_err = 0;
+    sensor_err |= publish_sensor("bmp390",  json_bmp390,  last_bmp390);
+    sensor_err |= publish_sensor("iis2mdc", json_iis2mdc, last_iis2mdc);
+    sensor_err |= publish_sensor("icm42688",json_icm42688,last_icm42688);
 
-    if (topic_sensor[0] != '\0') {
-        if (strcmp(sensor_payload, last_sensor_payload) != 0) {
-            snprintf(topic, sizeof(topic), "%s%s", mqtt_config.client_id, topic_sensor);
-            int sensor_err = data_publish(&client, MQTT_QOS_0_AT_MOST_ONCE,
-                               (uint8_t *)sensor_payload, strlen(sensor_payload), topic);
-            if (sensor_err == 0) {
-                memcpy(last_sensor_payload, sensor_payload, sizeof(sensor_payload));
-                LOG_INF("Published sensor data");
-            } else {
-                LOG_ERR("Failed to publish sensor data: %d", sensor_err);
-                if (err == 0) {
-                    err = sensor_err;
-                }
-            }
-        } else {
-            LOG_DBG("No new sensor data since last publish");
-        }
-    } else {
-        LOG_DBG("Sensor topic not configured, skipping sensor publish");
+    if (sensor_err != 0 && err == 0) {
+        err = sensor_err;
     }
-    
 
-    if (publish_lte_info && topic_lte[0] != '\0') {
-        snprintf(topic, sizeof(topic), "%s%s", mqtt_config.client_id, topic_lte);
-        int lte_err = data_publish(&client, MQTT_QOS_0_AT_MOST_ONCE,
-                           (uint8_t *)json_payload_lte, strlen(json_payload_lte), topic);
+    /* ---- LTE ---- */
+    if (topic_lte[0] != '\0') {
+        snprintf(topic, sizeof(topic), "%s%s",
+                 mqtt_config.client_id, topic_lte);
+        int lte_err = data_publish(&client, mqtt_config.qos,
+                                   (uint8_t *)json_payload_lte,
+                                   strlen(json_payload_lte), topic);
         if (lte_err == 0) {
-            publish_lte_info = false;
+
             LOG_INF("Published LTE info");
         } else {
             LOG_ERR("Failed to publish LTE info: %d", lte_err);
@@ -717,14 +746,12 @@ int publish_all(void)
                 err = lte_err;
             }
         }
-    } else if (publish_lte_info) {
-        LOG_WRN("LTE topic not configured, skipping LTE publish");
-        publish_lte_info = false;
     }
-    
+
     k_mutex_unlock(&json_mutex);
     return err;
 }
+
 
 /**
  * @brief Initialize MQTT connection and start thread
