@@ -11,20 +11,14 @@
 #include <modem/modem_key_mgmt.h>
 #include <net/fota_download.h>
 #include <dfu/dfu_target_mcuboot.h>
+#include "config.h"
 
-enum fota_state {
-    FOTA_IDLE,
-    FOTA_CONNECTED,
-    FOTA_DOWNLOADING,
-    FOTA_READY_TO_APPLY,
-    FOTA_APPLYING,
-};
 
 typedef void (*fota_callback_t)(enum fota_state new_state, int error);
 
 extern enum fota_state current_state;
 extern fota_callback_t state_callback;
-extern struct k_work fota_work;
+
 
 
 

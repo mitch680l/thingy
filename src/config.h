@@ -1,3 +1,6 @@
+#ifndef CONFIG_H
+#define CONFIG_H
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <zephyr/kernel.h>
@@ -88,7 +91,7 @@ extern char json_iis2mdc[JSON_BUF_SIZE];
 extern char json_icm42688[JSON_BUF_SIZE];
 extern struct mqtt_utf8 struct_pass;
 extern struct mqtt_utf8 struct_user;
-
+extern struct k_work fota_work;
 
 
 typedef struct {
@@ -222,3 +225,14 @@ const char *get_config(const char *aad);
 void config_init(void);
 uint32_t manual_crc32(const uint8_t *data, size_t len);
 int update_crc(void);
+
+enum fota_state {
+    FOTA_IDLE,
+    FOTA_CONNECTED,
+    FOTA_DOWNLOADING,
+    FOTA_READY_TO_APPLY,
+    FOTA_APPLYING,
+};
+
+
+#endif // CONFIG_H

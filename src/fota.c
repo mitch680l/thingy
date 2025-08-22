@@ -5,11 +5,11 @@
  */
 
 #include "fota.h"
-#include "config.h"
+
 #include <nrf_socket.h>
 #include "heartbeat.h"
 
-enum fota_state current_state = FOTA_IDLE;
+
 fota_callback_t state_callback = NULL;
 struct k_work fota_work;
 
@@ -152,6 +152,8 @@ int check_fota_server(void)
         return -EBUSY;
         
     default:
+        LOG_ERR("Invalid FOTA state: %d", current_state);
+        set_state(FOTA_IDLE, -EINVAL);
         return -EINVAL;
     }
 

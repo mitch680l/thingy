@@ -32,7 +32,7 @@ char firmware_filename[MQTT_MAX_STR_LEN] = "firmware.bin";
 struct mqtt_utf8 struct_pass;
 struct mqtt_utf8 struct_user;
 system_enable_t sys_enable_config;
-
+enum fota_state current_state = FOTA_IDLE;
 mqtt_config_t mqtt_config;
 ota_config_t ota_config;
 hardware_info_t hw_info;
