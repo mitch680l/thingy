@@ -142,9 +142,7 @@ int main(void)
     if (wdt_init() != 0) {
         LOG_ERR("Watchdog initialization failed!");
     }
-    if (!device_is_ready(wdt)) {
-        LOG_ERR("WDT device not ready");
-    }
+
     while (1) {
         start = k_uptime_get();
         gnss_main_loop();
