@@ -48,7 +48,7 @@ int wdt_init(void)
     struct wdt_timeout_cfg wdt_cfg = {
         .window.min = 1,
         .window.max = WDT_TIMEOUT_MS,
-        .callback = NULL
+        .callback = NULL,
         .flags = WDT_FLAG_RESET_SOC
     };
 
