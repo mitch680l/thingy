@@ -48,7 +48,8 @@
         "modem_key_mgmt.h": "c",
         "kernel.h": "c",
         "stdint.h": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "random.h": "c"
     },
     "C_Cpp.errorSquiggles": "disabled",
     "nrf-connect.applications": []

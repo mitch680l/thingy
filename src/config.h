@@ -79,13 +79,16 @@
 
 #define MAX_BLOB (8 * 1024) 
 #define PBKDF2_ITERATIONS 64000u
-extern char firmware_filename[MQTT_MAX_STR_LEN];
+
+#define FOTA_FILE_NAME_MAX_LEN 300
+#define DEFAULT_LEN 64
+extern char firmware_filename[FOTA_FILE_NAME_MAX_LEN];
 extern char json_payload[JSON_BUF_SIZE];
 extern char sensor_payload[JSON_BUF_SIZE];
 extern char json_payload_lte[JSON_BUF_SIZE];
-extern char topic_gps[64];
-extern char topic_sensor[64];
-extern char topic_lte[64];
+extern char topic_gps[DEFAULT_LEN];
+extern char topic_sensor[DEFAULT_LEN];
+extern char topic_lte[DEFAULT_LEN];
 extern char json_bmp390[JSON_BUF_SIZE];
 extern char json_iis2mdc[JSON_BUF_SIZE];
 extern char json_icm42688[JSON_BUF_SIZE];
