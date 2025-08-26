@@ -132,9 +132,7 @@ int main(void)
     }
 
 
-    if (wdt_init() != 0) {
-        LOG_ERR("Watchdog initialization failed!");
-    }
+    
 
     err = init();
     if (err) {
@@ -143,6 +141,9 @@ int main(void)
         LOG_INF("INIT GOOD");
     }
     
+    if (wdt_init() != 0) {
+        LOG_ERR("Watchdog initialization failed!");
+    }
     while (1) {
         start = k_uptime_get();
         gnss_main_loop();
