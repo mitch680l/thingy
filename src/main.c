@@ -31,7 +31,7 @@
 LOG_MODULE_REGISTER(loop, LOG_LEVEL_INF);
 
 //Watchdog timer setup for main
-#define WDT_TIMEOUT_MS 600000
+#define WDT_TIMEOUT_MS 120000
 static const struct device *wdt;
 static int wdt_chan_id;
 
