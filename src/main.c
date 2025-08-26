@@ -17,15 +17,58 @@
 #include <zephyr/sys/heap_listener.h>
 #include "mqtt_connection.h"
 #include "gnss.h"
+#include "nrf.h"
 #include "heartbeat.h"
 #include "lte_helper.h"
 #include "shell_commands.h"
+#include "modem_info.h"
 #include "fota.h"
 #include "config.h"
 #include "encryption_helper.h"
 #include "sensor.h"
 #include "../drivers/led/led_driver.h"
+#include <zephyr/drivers/watchdog.h>
 LOG_MODULE_REGISTER(loop, LOG_LEVEL_INF);
+
+//Watchdog timer setup for main
+#define WDT_TIMEOUT_MS 600000
+static const struct device *wdt;
+static int wdt_chan_id;
+
+
+/* Initialize the watchdog */
+int wdt_init(void)
+{
+    wdt = DEVICE_DT_GET(DT_NODELABEL(wdt0));
+    if (!device_is_ready(wdt)) {
+        LOG_ERR("WDT device not ready");
+        return -ENODEV;
+    }
+
+    struct wdt_timeout_cfg wdt_cfg = {
+        .window.min = 0,
+        .window.max = WDT_TIMEOUT_MS,
+        .callback = NULL 
+    };
+
+    wdt_chan_id = wdt_install_timeout(wdt, &wdt_cfg);
+    if (wdt_chan_id < 0) {
+        LOG_ERR("Failed to install WDT timeout");
+        return wdt_chan_id;
+    }
+
+    int err = wdt_setup(wdt, WDT_OPT_PAUSE_HALTED_BY_DBG);
+    if (err < 0) {
+        LOG_ERR("Failed to setup WDT");
+        return err;
+    }
+
+    LOG_INF("Watchdog initialized with %d ms timeout", WDT_TIMEOUT_MS);
+    return 0;
+}
+
+
+
 
 /**
  * @brief Initialize all system components
@@ -36,6 +79,10 @@ static int init(void)
     
     LOG_INF("NEW APP STARTING");
     
+    if (!device_is_ready(wdt)) {
+        LOG_ERR("WDT device not ready");
+    }
+
     err = open_persistent_key();
     if (err) {
         LOG_ERR("open_persistent_key: %d", err);
@@ -83,7 +130,12 @@ int main(void)
     } else {
         printk("Firmware confirmed!\n");
     }
-    
+
+
+    if (wdt_init() != 0) {
+        LOG_ERR("Watchdog initialization failed!");
+    }
+
     err = init();
     if (err) {
         LOG_ERR("Initialization failed: %d", err);
@@ -94,6 +146,7 @@ int main(void)
     while (1) {
         start = k_uptime_get();
         gnss_main_loop();
+        wdt_feed(wdt, wdt_chan_id);
         end = k_uptime_get();
     }
     

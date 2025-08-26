@@ -28,7 +28,7 @@ char topic_sensor[64] = "/sensor";
 char topic_lte[64] = "/lte";
 char pwd[64] = "Kalscott123";
 char usr[64] = "admin";
-char firmware_filename[MQTT_MAX_STR_LEN] = "firmware.bin";
+char firmware_filename[300] = "firmware.bin";
 struct mqtt_utf8 struct_pass;
 struct mqtt_utf8 struct_user;
 system_enable_t sys_enable_config;
@@ -52,7 +52,7 @@ void set_filename(void) {
 
     char customer[MQTT_MAX_STR_LEN];
     char device[MQTT_MAX_STR_LEN];
-    char firmware_filename[MQTT_MAX_STR_LEN * 3]; // plenty of room
+
 
     // copy results immediately so we don't lose them
     const char *cfg_val = get_config("name");

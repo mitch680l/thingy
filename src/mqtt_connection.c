@@ -756,7 +756,8 @@ void mqtt_thread_fn(void *arg1, void *arg2, void *arg3)
             
         }
        
-        if ((start - last_fota_check) >= ota_config.check_interval) {
+        // Check FOTA server at configured intervals if enabled
+        if ((start - last_fota_check) >= ota_config.check_interval && sys_enable_config.ota_en && ota_config.check_interval != -1) {
             LOG_INF("Suspending MQTT publish to check FOTA...");
            
             if (fota_get_state() == FOTA_CONNECTED) {
