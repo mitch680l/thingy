@@ -53,13 +53,13 @@ int wdt_init(void)
 
     wdt_chan_id = wdt_install_timeout(wdt, &wdt_cfg);
     if (wdt_chan_id < 0) {
-        LOG_ERR("Failed to install WDT timeout");
+        LOG_ERR("Failed to install WDT timeout, err: %d", wdt_chan_id);
         return wdt_chan_id;
     }
 
     int err = wdt_setup(wdt, WDT_OPT_PAUSE_HALTED_BY_DBG);
     if (err < 0) {
-        LOG_ERR("Failed to setup WDT");
+        LOG_ERR("Failed to setup WDT, err: %d", err);
         return err;
     }
 
