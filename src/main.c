@@ -46,7 +46,9 @@ int wdt_init(void)
     }
 
     struct wdt_timeout_cfg wdt_cfg = {
-        .flags = WDT_FLAG_RESET_SOC
+    .window.min = 0,
+    .window.max = 16384,    
+    .flags = WDT_FLAG_RESET_SOC
     };
 
     wdt_chan_id = wdt_install_timeout(wdt, &wdt_cfg);
