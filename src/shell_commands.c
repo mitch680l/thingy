@@ -175,6 +175,16 @@ static int cmd_logout(const struct shell *sh, size_t argc, char **argv)
     return 0;
 }
 
+static int cmd_get_login_status(const struct shell *sh, size_t argc, char **argv)
+{
+    ARG_UNUSED(argc); ARG_UNUSED(argv);
+    shell_print(sh, "Authentication status: %s", s_authed ? "AUTHENTICATED" : "LOCKED");
+    if (!s_authed && s_lock_until_ms > k_uptime_get()) {
+        int32_t left = (int32_t)(s_lock_until_ms - k_uptime_get());
+        shell_print(sh, "  Locked for another %d.%03ds", left/1000, left%1000);
+    }
+    return 0;
+}
 
 static void auto_logout_thread(void)
 {
@@ -975,6 +985,7 @@ SHELL_CMD_REGISTER(cfg, &cfg_cmds, "Config blob commands", NULL);
 
 SHELL_CMD_REGISTER(login,  NULL, "Authenticate: login <password>",  cmd_login);
 SHELL_CMD_REGISTER(logout, NULL, "Logout and re-lock the shell",     cmd_logout);
+SHELL_CMD_REGISTER(s_authed, NULL, "Show auth status",               cmd_get_login_status);
 
 static int cmd_cfg_help(const struct shell *shell, size_t argc, char **argv)
 {

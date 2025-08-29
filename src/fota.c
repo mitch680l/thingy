@@ -75,14 +75,15 @@ int download_firmware(void)
 
     
     LOG_INF("Starting firmware download from %s%s", ota_config.server_addr, firmware_filename);
-
+    ktd2026_blink_yellow_1hz_30();
     err = fota_download_start(ota_config.server_addr, firmware_filename, atoi(ota_config.cert_tag), 0, 0);
     if (err) {
         LOG_ERR("fota_download_start() failed, err %d", err);
+        ktd2026_blink_red_1hz_30();
         return err;
     }
 
-    ktd2026_blink_blue_1hz_30();
+    
     
     return 0;
 }
