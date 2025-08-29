@@ -1,0 +1,3 @@
+provision:
+  size: 0x280
+  region: otp

@@ -1,0 +1,2 @@
+# Load Zephyr board defconfig descriptions.
+osource "C:/Users/leona/Desktop/thingy/boards/kestrel_board/KalScott/Kconfig.defconfig"

@@ -1,0 +1,13 @@
+# Target labels
+ s1_image
+# Source files and their labels
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/CMakeFiles/s1_image
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/CMakeFiles/s1_image.rule
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/CMakeFiles/s1_image-complete.rule
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/s1_image-prefix/src/s1_image-stamp/s1_image-build.rule
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/s1_image-prefix/src/s1_image-stamp/s1_image-configure.rule
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/s1_image-prefix/src/s1_image-stamp/s1_image-download.rule
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/s1_image-prefix/src/s1_image-stamp/s1_image-install.rule
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/s1_image-prefix/src/s1_image-stamp/s1_image-mkdir.rule
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/s1_image-prefix/src/s1_image-stamp/s1_image-patch.rule
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/s1_image-prefix/src/s1_image-stamp/s1_image-update.rule

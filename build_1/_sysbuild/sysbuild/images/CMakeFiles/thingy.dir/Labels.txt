@@ -1,0 +1,13 @@
+# Target labels
+ thingy
+# Source files and their labels
+C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/CMakeFiles/thingy
+C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/CMakeFiles/thingy.rule
+C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/CMakeFiles/thingy-complete.rule
+C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/thingy-prefix/src/thingy-stamp/thingy-build.rule
+C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/thingy-prefix/src/thingy-stamp/thingy-configure.rule
+C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/thingy-prefix/src/thingy-stamp/thingy-download.rule
+C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/thingy-prefix/src/thingy-stamp/thingy-install.rule
+C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/thingy-prefix/src/thingy-stamp/thingy-mkdir.rule
+C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/thingy-prefix/src/thingy-stamp/thingy-patch.rule
+C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/thingy-prefix/src/thingy-stamp/thingy-update.rule

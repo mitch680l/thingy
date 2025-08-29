@@ -1,0 +1,43 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/CMakeFiles/thingy"
+		},
+		{
+			"file" : "C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/CMakeFiles/thingy.rule"
+		},
+		{
+			"file" : "C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/CMakeFiles/thingy-complete.rule"
+		},
+		{
+			"file" : "C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/thingy-prefix/src/thingy-stamp/thingy-build.rule"
+		},
+		{
+			"file" : "C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/thingy-prefix/src/thingy-stamp/thingy-configure.rule"
+		},
+		{
+			"file" : "C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/thingy-prefix/src/thingy-stamp/thingy-download.rule"
+		},
+		{
+			"file" : "C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/thingy-prefix/src/thingy-stamp/thingy-install.rule"
+		},
+		{
+			"file" : "C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/thingy-prefix/src/thingy-stamp/thingy-mkdir.rule"
+		},
+		{
+			"file" : "C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/thingy-prefix/src/thingy-stamp/thingy-patch.rule"
+		},
+		{
+			"file" : "C:/Users/leona/Desktop/thingy/build_1/_sysbuild/sysbuild/images/thingy-prefix/src/thingy-stamp/thingy-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"thingy"
+		],
+		"name" : "thingy"
+	}
+}

@@ -1,0 +1,18 @@
+{
+  "toolchainPath": "c:\\ncs\\toolchains\\0b393f9e1b",
+  "sdkPath": "c:\\ncs\\v3.0.2",
+  "board": "kestrel/nrf9151/ns",
+  "boardDir": "c:\\Users\\leona\\Desktop\\thingy\\boards\\kestrel_board\\KalScott",
+  "boardDirs": [
+    "c:\\Users\\leona\\Desktop\\thingy\\boards\\kestrel_board\\KalScott"
+  ],
+  "optimizations": "none",
+  "cmakeArgs": [],
+  "confFiles": [],
+  "buildDirectory": "build_1",
+  "kconfigFragments": [],
+  "snippets": [],
+  "dtcOverlays": [],
+  "extraDtcOverlays": [],
+  "boardRoot": "c:\\Users\\leona\\Desktop\\thingy"
+}

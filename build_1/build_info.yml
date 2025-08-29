@@ -1,0 +1,32 @@
+cmake:
+  application:
+    source-dir: C:/ncs/v3.0.2/zephyr/share/sysbuild
+  board:
+    name: kestrel
+    path:
+     - C:/Users/leona/Desktop/thingy/boards/kestrel_board/KalScott
+    qualifiers: nrf9151/ns
+    revision: 
+  images:
+   - name: thingy
+     source-dir: C:/Users/leona/Desktop/thingy
+     type: MAIN
+   - name: mcuboot
+     source-dir: C:/ncs/v3.0.2/bootloader/mcuboot/boot/zephyr/
+     type: BOOTLOADER
+   - name: b0
+     source-dir: 
+   - name: s1_image
+     source-dir: 
+  kconfig:
+    files:
+     - C:/Users/leona/Desktop/thingy/build_1/_sysbuild/empty.conf
+     - c:/Users/leona/Desktop/thingy/sysbuild.conf
+    user-files:
+     - c:/Users/leona/Desktop/thingy/sysbuild.conf
+  sysbuild: true
+version: 0.1.0
+west:
+  command: C:\ncs\toolchains\0b393f9e1b\opt\bin\Scripts\west build --build-dir c:/Users/leona/Desktop/thingy/build_1 c:/Users/leona/Desktop/thingy --pristine --board kestrel/nrf9151/ns -- -DBOARD_ROOT=c:/users/leona/desktop/thingy
+  topdir: c:\ncs\v3.0.2
+  version: 1.2.0

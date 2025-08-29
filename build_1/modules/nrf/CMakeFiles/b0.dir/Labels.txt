@@ -1,0 +1,13 @@
+# Target labels
+ b0
+# Source files and their labels
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/CMakeFiles/b0
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/CMakeFiles/b0.rule
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/CMakeFiles/b0-complete.rule
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/b0-prefix/src/b0-stamp/b0-build.rule
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/b0-prefix/src/b0-stamp/b0-configure.rule
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/b0-prefix/src/b0-stamp/b0-download.rule
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/b0-prefix/src/b0-stamp/b0-install.rule
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/b0-prefix/src/b0-stamp/b0-mkdir.rule
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/b0-prefix/src/b0-stamp/b0-patch.rule
+C:/Users/leona/Desktop/thingy/build_1/modules/nrf/b0-prefix/src/b0-stamp/b0-update.rule

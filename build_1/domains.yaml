@@ -1,0 +1,13 @@
+default: thingy
+build_dir: C:/Users/leona/Desktop/thingy/build_1
+domains:
+  - name: thingy
+    build_dir: C:/Users/leona/Desktop/thingy/build_1/thingy
+  - name: mcuboot
+    build_dir: C:/Users/leona/Desktop/thingy/build_1/mcuboot
+  - name: b0
+    build_dir: C:/Users/leona/Desktop/thingy/build_1/b0
+  - name: s1_image
+    build_dir: C:/Users/leona/Desktop/thingy/build_1/s1_image
+flash_order:
+  - thingy

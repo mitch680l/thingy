@@ -1,0 +1,50 @@
+cmake:
+  application:
+    configuration-dir: C:/ncs/v3.0.2/bootloader/mcuboot/boot/zephyr
+    source-dir: C:/ncs/v3.0.2/bootloader/mcuboot/boot/zephyr
+  board:
+    name: kestrel
+    path:
+     - C:/Users/leona/Desktop/thingy/boards/kestrel_board/KalScott
+    qualifiers: nrf9151
+    revision: 
+  devicetree:
+    bindings-dirs:
+     - C:/ncs/v3.0.2/nrf/dts/bindings
+     - C:/ncs/v3.0.2/zephyr/dts/bindings
+    files:
+     - C:/Users/leona/Desktop/thingy/boards/kestrel_board/KalScott/kestrel_nrf9151.dts
+     - C:/ncs/v3.0.2/bootloader/mcuboot/boot/zephyr/boards/kestrel_nrf9151.overlay
+    include-dirs:
+     - C:/ncs/v3.0.2/nrf/include
+     - C:/ncs/v3.0.2/nrf/dts/common
+     - C:/ncs/v3.0.2/nrf/dts/riscv
+     - C:/ncs/v3.0.2/nrf/dts/arm
+     - C:/ncs/v3.0.2/nrf/dts
+     - C:/ncs/v3.0.2/bootloader/mcuboot/boot/zephyr/include
+     - C:/Users/leona/Desktop/thingy/boards/kestrel_board/KalScott/dts
+     - C:/ncs/v3.0.2/zephyr/include
+     - C:/ncs/v3.0.2/zephyr/include/zephyr
+     - C:/ncs/v3.0.2/zephyr/dts/common
+     - C:/ncs/v3.0.2/zephyr/dts/x86
+     - C:/ncs/v3.0.2/zephyr/dts/xtensa
+     - C:/ncs/v3.0.2/zephyr/dts/sparc
+     - C:/ncs/v3.0.2/zephyr/dts/riscv
+     - C:/ncs/v3.0.2/zephyr/dts/posix
+     - C:/ncs/v3.0.2/zephyr/dts/nios2
+     - C:/ncs/v3.0.2/zephyr/dts/arm64
+     - C:/ncs/v3.0.2/zephyr/dts/arm
+     - C:/ncs/v3.0.2/zephyr/dts/arc
+     - C:/ncs/v3.0.2/zephyr/dts
+    user-files:
+     - C:/ncs/v3.0.2/bootloader/mcuboot/boot/zephyr/boards/kestrel_nrf9151.overlay
+  toolchain:
+    name: zephyr
+    path: C:/ncs/toolchains/0b393f9e1b/opt/zephyr-sdk
+  vendor-specific:
+    nordic:
+      svdfile: C:/ncs/v3.0.2/modules/hal/nordic/nrfx/mdk/nrf9120.svd
+  zephyr:
+    version: 4.0.99
+    zephyr-base: C:/ncs/v3.0.2/zephyr
+version: 0.1.0
